@@ -114,7 +114,12 @@ jobs:
         with:
           bundler-cache: true
 
+      - name: Skip if no system tests exist
+        if: ${{ hashFiles('test/system/**/*_test.rb') == '' }}
+        run: echo "No system tests found under test/system/**/*_test.rb; skipping."
+
       - name: Run System Tests
+        if: ${{ hashFiles('test/system/**/*_test.rb') != '' }}
         env:
           RAILS_ENV: test
           # RAILS_MASTER_KEY: ${{ secrets.RAILS_MASTER_KEY }}
