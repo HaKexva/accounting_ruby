@@ -1,0 +1,25 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  transaction_date: 2026-04-25
+  transaction_item: MyString
+  category: MyString
+  payment_method: MyString
+  credit_card_payment_method: MyString
+  payment_timing: MyString
+  actual_amount: 9.99
+  payment_platform: MyString
+  posted_amount: 9.99
+  note: MyText
+
+two:
+  transaction_date: 2026-04-25
+  transaction_item: MyString
+  category: MyString
+  payment_method: MyString
+  credit_card_payment_method: MyString
+  payment_timing: MyString
+  actual_amount: 9.99
+  payment_platform: MyString
+  posted_amount: 9.99
+  note: MyText
