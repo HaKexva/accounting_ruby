@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-module Docs
+module RubyUI
   class ComponentsTable < Phlex::HTML
     def initialize(files)
       @files = files

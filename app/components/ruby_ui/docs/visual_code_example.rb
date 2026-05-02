@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-module Docs
+module RubyUI
   class VisualCodeExample < Phlex::HTML
     def initialize(title:, context:, description: nil, src: nil)
       @title = title

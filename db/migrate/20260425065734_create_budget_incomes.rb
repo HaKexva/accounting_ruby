@@ -1,6 +1,6 @@
 class CreateBudgetIncomes < ActiveRecord::Migration[8.1]
   def change
-    create_table :revenue_budget do |t|
+    create_table :revenue_budgets do |t|
       t.string :item, null: false
       t.decimal :amount, null: false
       t.text :note

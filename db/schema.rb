@@ -10,8 +10,8 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_05_02_045517) do
-  create_table "actual_expenditure", force: :cascade do |t|
+ActiveRecord::Schema[8.1].define(version: 2026_05_02_051425) do
+  create_table "actual_expenditures", force: :cascade do |t|
     t.decimal "actual_amount", null: false
     t.integer "calendar_month_id", null: false
     t.string "category", null: false
@@ -26,9 +26,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_02_045517) do
     t.string "transaction_item", null: false
     t.datetime "updated_at", null: false
     t.integer "user_id", null: false
-    t.index ["calendar_month_id"], name: "index_actual_expenditure_on_calendar_month_id"
-    t.index ["transaction_date", "transaction_item"], name: "idx_on_transaction_date_transaction_item_991bffafc4"
-    t.index ["user_id"], name: "index_actual_expenditure_on_user_id"
+    t.index ["calendar_month_id"], name: "index_actual_expenditures_on_calendar_month_id"
+    t.index ["transaction_date", "transaction_item"], name: "idx_on_transaction_date_transaction_item_05330fe101"
+    t.index ["user_id"], name: "index_actual_expenditures_on_user_id"
   end
 
   create_table "calendar_months", force: :cascade do |t|
@@ -41,7 +41,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_02_045517) do
     t.index ["user_id"], name: "index_calendar_months_on_user_id"
   end
 
-  create_table "expenditure_budget", force: :cascade do |t|
+  create_table "expenditure_budgets", force: :cascade do |t|
     t.decimal "amount", null: false
     t.integer "calendar_month_id", null: false
     t.string "category", null: false
@@ -50,11 +50,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_02_045517) do
     t.text "note"
     t.datetime "updated_at", null: false
     t.integer "user_id", null: false
-    t.index ["calendar_month_id"], name: "index_expenditure_budget_on_calendar_month_id"
-    t.index ["user_id"], name: "index_expenditure_budget_on_user_id"
+    t.index ["calendar_month_id"], name: "index_expenditure_budgets_on_calendar_month_id"
+    t.index ["user_id"], name: "index_expenditure_budgets_on_user_id"
   end
 
-  create_table "revenue_budget", force: :cascade do |t|
+  create_table "revenue_budgets", force: :cascade do |t|
     t.decimal "amount", null: false
     t.integer "calendar_month_id", null: false
     t.datetime "created_at", null: false
@@ -62,8 +62,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_02_045517) do
     t.text "note"
     t.datetime "updated_at", null: false
     t.integer "user_id", null: false
-    t.index ["calendar_month_id"], name: "index_revenue_budget_on_calendar_month_id"
-    t.index ["user_id"], name: "index_revenue_budget_on_user_id"
+    t.index ["calendar_month_id"], name: "index_revenue_budgets_on_calendar_month_id"
+    t.index ["user_id"], name: "index_revenue_budgets_on_user_id"
   end
 
   create_table "users", force: :cascade do |t|

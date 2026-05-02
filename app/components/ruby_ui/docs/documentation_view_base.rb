@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
-module Views
-  class Base < Phlex::HTML
+module RubyUI
+  class DocumentationViewBase < Phlex::HTML
     def Heading(level:, &)
       tag = :"h#{level}"
       send(tag, &)
@@ -11,17 +11,14 @@ module Views
       []
     end
 
-    # Text helper for wrapping paragraphs
     def Text(&)
       p(&)
     end
 
-    # InlineLink helper for documentation links
     def InlineLink(href:, target: nil, class: nil, &)
       a(href: href, target: target, class: binding.local_variable_get(:class), &)
     end
 
-    # Alert component helpers
     def Alert(&)
       div(&)
     end
@@ -34,7 +31,6 @@ module Views
       p(&)
     end
 
-    # Route helper stubs - return "#" as placeholder
     def docs_sheet_path
       "#"
     end
@@ -71,20 +67,8 @@ module Views
       "#"
     end
 
-    # InlineCode helper for typography examples
     def InlineCode(&)
       code(&)
     end
-  end
-end
-
-# Module-level components stub
-module Components
-  def self.Heading(level:, &block)
-    # Stub for module-level Heading calls
-  end
-
-  def self.TypographyList(items:, numbered: false)
-    # Stub for TypographyList component
   end
 end
