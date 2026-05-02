@@ -15,6 +15,6 @@ class CreateRealExpenses < ActiveRecord::Migration[8.1]
       t.timestamps
     end
 
-    add_index :actual_expenditures, [:transaction_date, :transaction_item]
+    add_index :actual_expenditures, [ :transaction_date, :transaction_item ]
   end
 end
