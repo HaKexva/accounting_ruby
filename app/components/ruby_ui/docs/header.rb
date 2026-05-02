@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-module Docs
+module RubyUI
   class Header < Phlex::HTML
     def initialize(title:, description: nil)
       @title = title

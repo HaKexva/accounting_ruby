@@ -1,6 +1,6 @@
 class CreateRealExpenses < ActiveRecord::Migration[8.1]
   def change
-    create_table :actual_expenditure do |t|
+    create_table :actual_expenditures do |t|
       t.date :transaction_date, null: false
       t.string :transaction_item, null: false
       t.string :category, null: false
@@ -15,6 +15,6 @@ class CreateRealExpenses < ActiveRecord::Migration[8.1]
       t.timestamps
     end
 
-    add_index :actual_expenditure, [:transaction_date, :transaction_item]
+    add_index :actual_expenditures, [:transaction_date, :transaction_item]
   end
 end
