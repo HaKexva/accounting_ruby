@@ -5,6 +5,10 @@ on:
   push:
     branches: [ main ]
 
+# Opt JavaScript-based actions (e.g. actions/cache) into Node.js 24 before the runner default flip.
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   scan_ruby:
     runs-on: ubuntu-latest
