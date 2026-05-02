@@ -1,2 +1,0 @@
-class RealExpense < ApplicationRecord
-end
