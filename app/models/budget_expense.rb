@@ -1,2 +1,0 @@
-class BudgetExpense < ApplicationRecord
-end

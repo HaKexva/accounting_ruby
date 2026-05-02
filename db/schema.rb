@@ -10,31 +10,10 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_04_25_071240) do
-  create_table "budget_expenses", force: :cascade do |t|
-    t.decimal "amount", precision: 12, scale: 2, null: false
-    t.string "category", null: false
-    t.datetime "created_at", null: false
-    t.string "item", null: false
-    t.text "note"
-    t.date "time", null: false
-    t.datetime "updated_at", null: false
-    t.index ["category"], name: "index_budget_expenses_on_category"
-    t.index ["time"], name: "index_budget_expenses_on_time"
-  end
-
-  create_table "budget_incomes", force: :cascade do |t|
-    t.decimal "amount", precision: 12, scale: 2, null: false
-    t.datetime "created_at", null: false
-    t.string "item", null: false
-    t.text "note"
-    t.date "time", null: false
-    t.datetime "updated_at", null: false
-    t.index ["time"], name: "index_budget_incomes_on_time"
-  end
-
-  create_table "real_expenses", force: :cascade do |t|
-    t.decimal "actual_amount", precision: 12, scale: 2, null: false
+ActiveRecord::Schema[8.1].define(version: 2026_05_02_045517) do
+  create_table "actual_expenditure", force: :cascade do |t|
+    t.decimal "actual_amount", null: false
+    t.integer "calendar_month_id", null: false
     t.string "category", null: false
     t.datetime "created_at", null: false
     t.string "credit_card_payment_method"
@@ -42,12 +21,55 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_25_071240) do
     t.string "payment_method", null: false
     t.string "payment_platform"
     t.string "payment_timing"
-    t.decimal "posted_amount", precision: 12, scale: 2
+    t.decimal "posted_amount", null: false
     t.date "transaction_date", null: false
     t.string "transaction_item", null: false
     t.datetime "updated_at", null: false
-    t.index ["category"], name: "index_real_expenses_on_category"
-    t.index ["payment_method"], name: "index_real_expenses_on_payment_method"
-    t.index ["transaction_date"], name: "index_real_expenses_on_transaction_date"
+    t.integer "user_id", null: false
+    t.index ["calendar_month_id"], name: "index_actual_expenditure_on_calendar_month_id"
+    t.index ["transaction_date", "transaction_item"], name: "idx_on_transaction_date_transaction_item_991bffafc4"
+    t.index ["user_id"], name: "index_actual_expenditure_on_user_id"
+  end
+
+  create_table "calendar_months", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.integer "month", null: false
+    t.datetime "updated_at", null: false
+    t.integer "user_id", null: false
+    t.integer "year", null: false
+    t.index ["user_id", "year", "month"], name: "index_calendar_months_on_user_id_and_year_and_month", unique: true
+    t.index ["user_id"], name: "index_calendar_months_on_user_id"
+  end
+
+  create_table "expenditure_budget", force: :cascade do |t|
+    t.decimal "amount", null: false
+    t.integer "calendar_month_id", null: false
+    t.string "category", null: false
+    t.datetime "created_at", null: false
+    t.string "item", null: false
+    t.text "note"
+    t.datetime "updated_at", null: false
+    t.integer "user_id", null: false
+    t.index ["calendar_month_id"], name: "index_expenditure_budget_on_calendar_month_id"
+    t.index ["user_id"], name: "index_expenditure_budget_on_user_id"
+  end
+
+  create_table "revenue_budget", force: :cascade do |t|
+    t.decimal "amount", null: false
+    t.integer "calendar_month_id", null: false
+    t.datetime "created_at", null: false
+    t.string "item", null: false
+    t.text "note"
+    t.datetime "updated_at", null: false
+    t.integer "user_id", null: false
+    t.index ["calendar_month_id"], name: "index_revenue_budget_on_calendar_month_id"
+    t.index ["user_id"], name: "index_revenue_budget_on_user_id"
+  end
+
+  create_table "users", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.string "email", null: false
+    t.string "google_uid", null: false
+    t.datetime "updated_at", null: false
   end
 end
