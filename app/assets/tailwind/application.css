@@ -1,8 +1,7 @@
 @import "tailwindcss";
 
-
-@import "../../../vendor/javascript/tw-animate-css.js";
-
+/* Optional animation utilities from npm (see package.json). Uncomment when vendor path is wired for tailwindcss build. */
+/* @import "../../../vendor/javascript/tw-animate-css.js"; */
 
 @custom-variant dark (&:is(.dark *));
 

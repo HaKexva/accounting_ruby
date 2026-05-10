@@ -18,12 +18,15 @@
     <link rel="icon" href="/icon.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="/icon.png">
 
-    <%# Includes all stylesheet files in app/assets/stylesheets %>
+    <%# :app links every app/assets/**/*.css (includes builds/tailwind.css after `rails tailwindcss:build`).
+        Do not use stylesheet_link_tag "tailwind" alone — Propshaft raises if the file is missing. %>
     <%= stylesheet_link_tag :app, "data-turbo-track": "reload" %>
     <%= javascript_importmap_tags %>
   </head>
 
-  <body>
-    <%= yield %>
+  <body class="overflow-x-hidden">
+    <%= render RubyUI::Layout.new do %>
+      <%= yield %>
+    <% end %>
   </body>
 </html>
