@@ -72,7 +72,7 @@ COPY --chown=rails:rails --from=build /rails /rails
 # Entrypoint prepares the database.
 ENTRYPOINT ["/rails/bin/docker-entrypoint"]
 
-# Thruster defaults to HTTP_PORT=80, but Railway (and similar) route to $PORT (e.g. 8080).
-# Align Thruster's listen port with the platform-assigned PORT before starting Puma.
+# Thruster: HTTP_PORT = edge listen (must match Railway's $PORT, e.g. 8080).
+# TARGET_PORT = where Puma listens behind Thruster (this app defaults to 3100).
 EXPOSE 8080
-CMD ["/bin/sh", "-c", "export HTTP_PORT=\"${PORT:-80}\"; exec ./bin/thrust ./bin/rails server"]
+CMD ["/bin/sh", "-c", "export HTTP_PORT=\"${PORT:-80}\" TARGET_PORT=\"${TARGET_PORT:-3100}\"; exec ./bin/thrust ./bin/rails server"]

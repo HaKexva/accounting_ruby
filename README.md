@@ -106,8 +106,15 @@ Production uses **[Thruster](https://github.com/basecamp/thruster)** in front of
 
 This repo fixes that by:
 
-- **`Dockerfile`**: `CMD` sets `HTTP_PORT` from `PORT` before starting Thruster.
-- **[`Procfile`](Procfile)** (for Nixpacks / non-Docker builds): same `HTTP_PORT="${PORT:-80}"` pattern.
+- **`Dockerfile`**: `CMD` sets **`HTTP_PORT` from `PORT`** (Railway’s edge port) and **`TARGET_PORT` to `3100` by default** (internal Puma behind Thruster).
+- **[`Procfile`](Procfile)** (for Nixpacks / non-Docker builds): same pattern.
+
+**Ports (important):**
+
+| Port | Role |
+|------|------|
+| **`PORT`** (Railway) | Port **Thruster** listens on — **injected by Railway** (often `8080`). Must match your public domain **target port** in Railway (usually the default; do **not** set target `3000` or `3100` unless that is what the process listens on). |
+| **`TARGET_PORT`** | Port **Puma** uses **inside** the container (default **`3100`** here). Thruster proxies `PORT` → `TARGET_PORT`. Override with env `TARGET_PORT` if needed. |
 
 **Set in the Railway service:**
 
@@ -115,7 +122,8 @@ This repo fixes that by:
 |----------|--------|
 | `SECRET_KEY_BASE` | Required for production Rails (generate with `bin/rails secret`). |
 | `RAILS_MASTER_KEY` | Required if you use encrypted credentials (`config/master.key` contents). |
-| `PORT` | Usually **pre-set by Railway**; do not override unless you know why. |
+| `PORT` | Usually **pre-set by Railway** — Thruster’s **`HTTP_PORT`** follows this. Only override if you intentionally run the app on a fixed port and set the domain **target port** to match. |
+| `TARGET_PORT` | Optional; defaults to **`3100`** (Puma behind Thruster). |
 
 Health check path is **`/up`** (see [`railway.toml`](railway.toml)). If deploys fail during first boot, check logs for **`db:prepare`** or migration errors (`bin/docker-entrypoint` runs migrations when the process is `rails server`).
 
@@ -253,8 +261,15 @@ bin/dev
 
 本專案已處理：
 
-- **`Dockerfile`**：`CMD` 在啟動 Thruster 前將 **`HTTP_PORT` 設為 `PORT`**。
-- **[`Procfile`](Procfile)**（Nixpacks／非 Docker 建置）：同樣使用 `HTTP_PORT="${PORT:-80}"`。
+- **`Dockerfile`**：`CMD` 將 **`HTTP_PORT` 設為 Railway 的 `PORT`**（對外／邊緣連線埠），並將 **`TARGET_PORT` 預設為 `3100`**（容器內 Puma 監聽埠，在 Thruster 後方）。
+- **[`Procfile`](Procfile)**（Nixpacks／非 Docker 建置）：同上。
+
+**埠號說明：**
+
+| 埠 | 用途 |
+|------|------|
+| **`PORT`**（Railway） | **Thruster** 對外監聽 — 由 **Railway 注入**（常為 `8080`）。須與公開網域的 **target port** 一致（多數為預設；若流程實際監聽 `8080`，請勿將 target 設成 `3000` 或 `3100` 除非你真的讓程式聽在那些埠）。 |
+| **`TARGET_PORT`** | **Puma** 在容器**內部**使用的埠（本專案預設 **`3100`**）。Thruster 將 `PORT` 轉發至此。需要時可用環境變數 **`TARGET_PORT`** 覆寫。 |
 
 **建議在 Railway 服務變數中設定：**
 
@@ -262,7 +277,8 @@ bin/dev
 |----------|--------|
 | `SECRET_KEY_BASE` | 正式環境必填（可用 `bin/rails secret` 產生）。 |
 | `RAILS_MASTER_KEY` | 若使用加密 credentials，請貼上 `config/master.key` 內容。 |
-| `PORT` | 通常由 **Railway 自動設定**；除非清楚需求否則勿覆寫。 |
+| `PORT` | 通常由 **Railway 自動設定** — Thruster 的 **`HTTP_PORT`** 會跟隨此值。僅在刻意固定對外埠並將網域 **target port** 設為相同值時才覆寫。 |
+| `TARGET_PORT` | 選填；預設 **`3100`**（Thruster 後方的 Puma）。 |
 
 健康檢查路徑為 **`/up`**（見 [`railway.toml`](railway.toml)）。若首次部署失敗，請查看日誌是否為 **`db:prepare`** 或遷移錯誤（`bin/docker-entrypoint` 在啟動 `rails server` 時會執行資料庫準備）。
 
