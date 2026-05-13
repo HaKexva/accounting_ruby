@@ -100,7 +100,32 @@ Domain models live under [`app/models/`](app/models/) (e.g. actual expenditures,
 - [`Dockerfile`](Dockerfile) builds the app; **`rails assets:precompile`** runs in the image and **`tailwindcss:build`** is hooked to **`assets:precompile`** by `tailwindcss-rails`.
 - [Kamal](https://kamal-deploy.org/) config: [`config/deploy.yml`](config/deploy.yml).
 
+### Railway
+
+Production uses **[Thruster](https://github.com/basecamp/thruster)** in front of Puma. Thruster’s default HTTP listen port is **80**, while **Railway injects `PORT`** (often **8080**). If they do not match, health checks and browsers get **“Application failed to respond.”**
+
+This repo fixes that by:
+
+- **`Dockerfile`**: `CMD` sets `HTTP_PORT` from `PORT` before starting Thruster.
+- **[`Procfile`](Procfile)** (for Nixpacks / non-Docker builds): same `HTTP_PORT="${PORT:-80}"` pattern.
+
+**Set in the Railway service:**
+
+| Variable | Notes |
+|----------|--------|
+| `SECRET_KEY_BASE` | Required for production Rails (generate with `bin/rails secret`). |
+| `RAILS_MASTER_KEY` | Required if you use encrypted credentials (`config/master.key` contents). |
+| `PORT` | Usually **pre-set by Railway**; do not override unless you know why. |
+
+Health check path is **`/up`** (see [`railway.toml`](railway.toml)). If deploys fail during first boot, check logs for **`db:prepare`** or migration errors (`bin/docker-entrypoint` runs migrations when the process is `rails server`).
+
 ### Troubleshooting
+
+#### Railway: “Application failed to respond”
+
+1. Confirm Thruster listens on **`PORT`**: redeploy after pulling the Dockerfile / `Procfile` fix above, or set **`HTTP_PORT=$PORT`** (or `THRUSTER_HTTP_PORT`) in Railway variables.
+2. Confirm **`SECRET_KEY_BASE`** (and **`RAILS_MASTER_KEY`** if using credentials) are set.
+3. Read deploy logs for boot errors (database, missing master key, failed migrations).
 
 #### `Propshaft::MissingAssetError` for `tailwind.css`
 
@@ -222,7 +247,32 @@ bin/dev
 - [`Dockerfile`](Dockerfile) 建置映像時會跑 **`rails assets:precompile`**；`tailwindcss-rails` 會在 **`assets:precompile`** 階段觸發 **`tailwindcss:build`**。
 - [Kamal](https://kamal-deploy.org/) 設定：[`config/deploy.yml`](config/deploy.yml)。
 
+### Railway
+
+正式環境使用 **[Thruster](https://github.com/basecamp/thruster)** 反向代理 Puma。Thruster 預設 **`HTTP_PORT=80`** 監聽 HTTP，而 **Railway 會注入 `PORT`**（常見為 **8080**）。兩者不一致時，健康檢查與瀏覽器會出現 **「Application failed to respond」**。
+
+本專案已處理：
+
+- **`Dockerfile`**：`CMD` 在啟動 Thruster 前將 **`HTTP_PORT` 設為 `PORT`**。
+- **[`Procfile`](Procfile)**（Nixpacks／非 Docker 建置）：同樣使用 `HTTP_PORT="${PORT:-80}"`。
+
+**建議在 Railway 服務變數中設定：**
+
+| 變數 | 說明 |
+|----------|--------|
+| `SECRET_KEY_BASE` | 正式環境必填（可用 `bin/rails secret` 產生）。 |
+| `RAILS_MASTER_KEY` | 若使用加密 credentials，請貼上 `config/master.key` 內容。 |
+| `PORT` | 通常由 **Railway 自動設定**；除非清楚需求否則勿覆寫。 |
+
+健康檢查路徑為 **`/up`**（見 [`railway.toml`](railway.toml)）。若首次部署失敗，請查看日誌是否為 **`db:prepare`** 或遷移錯誤（`bin/docker-entrypoint` 在啟動 `rails server` 時會執行資料庫準備）。
+
 ### 疑難排解
+
+#### Railway：「Application failed to respond」
+
+1. 確認 Thruster 監聽 **`PORT`**：請拉取並重新部署含上述 Dockerfile／`Procfile` 的版本，或在 Railway 變數設定 **`HTTP_PORT=$PORT`**（或 `THRUSTER_HTTP_PORT`）。
+2. 確認已設定 **`SECRET_KEY_BASE`**（以及使用 credentials 時的 **`RAILS_MASTER_KEY`**）。
+3. 查看部署日誌是否有啟動錯誤（資料庫、master key、遷移失敗等）。
 
 #### 出現 `Propshaft::MissingAssetError`（找不到 `tailwind.css`）
 
