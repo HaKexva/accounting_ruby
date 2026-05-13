@@ -1,0 +1,14 @@
+#!/bin/sh
+# Thruster + Puma for production / Railway.
+# - HTTP_PORT: port Thruster listens on (must match Railway $PORT and public "target port").
+# - TARGET_PORT: port Puma uses behind Thruster (default 3000).
+# If both would be the same (e.g. PORT=3000 and default Puma 3000), bump Puma to 3100 to avoid bind conflict.
+set -e
+
+export HTTP_PORT="${PORT:-8080}"
+export TARGET_PORT="${TARGET_PORT:-3000}"
+if [ "$HTTP_PORT" = "$TARGET_PORT" ]; then
+  export TARGET_PORT=3100
+fi
+
+exec ./bin/thrust ./bin/rails server

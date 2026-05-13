@@ -102,20 +102,23 @@ Domain models live under [`app/models/`](app/models/) (e.g. actual expenditures,
 
 ### Railway
 
-Production uses **[Thruster](https://github.com/basecamp/thruster)** in front of Puma. Thruster’s default HTTP listen port is **80**, while **Railway injects `PORT`** (often **8080**). If they do not match, health checks and browsers get **“Application failed to respond.”**
+Production uses **[Thruster](https://github.com/basecamp/thruster)** in front of Puma. Thruster’s public listen port is **`HTTP_PORT`**; Puma’s internal port is **`TARGET_PORT`** (default **3000**). **Railway injects `PORT`** for the public edge — **`HTTP_PORT` must equal `PORT`**. If they differ, you get **“Application failed to respond.”**
 
-This repo fixes that by:
+**[`bin/start-web`](bin/start-web)** sets:
 
-- **`Dockerfile`**: `CMD` sets **`HTTP_PORT` from `PORT`** before starting Thruster. Puma runs on Thruster’s default **`TARGET_PORT` (3000)**.
-- **[`Procfile`](Procfile)** (for Nixpacks / non-Docker builds): same `HTTP_PORT="${PORT:-80}"` pattern.
+- `HTTP_PORT="${PORT:-8080}"` — if Railway does not set `PORT`, we default Thruster to **8080** (common PaaS default; **set `PORT` in Railway Variables** to match your service networking if needed).
+- `TARGET_PORT` default **3000** for Puma behind Thruster.
+- If `HTTP_PORT` and `TARGET_PORT` would be the same (e.g. you set **`PORT=3000`**), Puma is moved to **3100** so Thruster and Puma do not bind the same TCP port.
+
+**Dockerfile** / **[`Procfile`](Procfile)** invoke **`bin/start-web`**.
 
 **Ports:**
 
 | Port | Role |
 |------|------|
-| **`PORT`** (Railway) | Port **Thruster** listens on — **injected by Railway** (often `8080`). Must match your public domain **target port**. |
-| **3000** (behind Thruster) | **Puma** listens here inside the container (Thruster’s default **`TARGET_PORT`**). Override only if you set **`TARGET_PORT`** explicitly. |
-| **3100** (local only) | When **`PORT` is unset** (e.g. `bin/rails server` without Foreman), **`config/puma.rb`** uses **`ENV.fetch("PORT", 3100)`** so local dev defaults to **3100**. |
+| **`PORT`** (Railway) | Must match **Thruster’s public listen** (`HTTP_PORT`). Set in Railway **Variables** if the platform does not inject it; must match public **target port**. |
+| **3000** (typical internal) | **Puma** behind Thruster when `PORT` ≠ 3000. |
+| **3100** | **Puma** when you force **`PORT=3000`** (collision avoidance), or **local** `bin/rails server` when `PORT` is unset (`config/puma.rb`). |
 
 **Set in the Railway service:**
 
@@ -123,8 +126,8 @@ This repo fixes that by:
 |----------|--------|
 | `SECRET_KEY_BASE` | Required for production Rails (generate with `bin/rails secret`). |
 | `RAILS_MASTER_KEY` | Required if you use encrypted credentials (`config/master.key` contents). |
-| `PORT` | Usually **pre-set by Railway** — Thruster’s **`HTTP_PORT`** follows this. |
-| `TARGET_PORT` | Optional; Thruster defaults to **3000** for Puma. Only set if you need a different internal port. |
+| `PORT` | Prefer Railway’s auto value; if missing, set explicitly (e.g. **8080**) and match networking / custom domain **target port**. You may use **3000** — the script avoids Thruster/Puma port clash. |
+| `TARGET_PORT` | Optional override for Puma’s internal port (default **3000** unless collision logic sets **3100**). |
 
 Health check path is **`/up`** (see [`railway.toml`](railway.toml)). If deploys fail during first boot, check logs for **`db:prepare`** or migration errors (`bin/docker-entrypoint` runs migrations when the process is `rails server`).
 
@@ -132,7 +135,7 @@ Health check path is **`/up`** (see [`railway.toml`](railway.toml)). If deploys 
 
 #### Railway: “Application failed to respond”
 
-1. Confirm Thruster listens on **`PORT`**: redeploy after pulling the Dockerfile / `Procfile` fix above, or set **`HTTP_PORT=$PORT`** (or `THRUSTER_HTTP_PORT`) in Railway variables.
+1. In **Variables**, ensure **`PORT`** is set and matches **Public Networking / custom domain target port**; deploy a build that uses **`bin/start-web`**.
 2. Confirm **`SECRET_KEY_BASE`** (and **`RAILS_MASTER_KEY`** if using credentials) are set.
 3. Read deploy logs for boot errors (database, missing master key, failed migrations).
 
@@ -258,20 +261,26 @@ bin/dev
 
 ### Railway
 
-正式環境使用 **[Thruster](https://github.com/basecamp/thruster)** 反向代理 Puma。Thruster 預設 **`HTTP_PORT=80`** 監聽 HTTP，而 **Railway 會注入 `PORT`**（常見為 **8080**）。兩者不一致時，健康檢查與瀏覽器會出現 **「Application failed to respond」**。
+正式環境使用 **[Thruster](https://github.com/basecamp/thruster)**：對外聽 **`HTTP_PORT`**，後面轉給 **Puma**（**`TARGET_PORT`**，預設 **3000**）。**Railway 的環境變數 `PORT` 必須等於 Thruster 對外聽的埠**；若對不起來，就會 **502 / Application failed to respond**。
 
-本專案已處理：
+**[`bin/start-web`](bin/start-web)** 會：
 
-- **`Dockerfile`**：`CMD` 將 **`HTTP_PORT` 設為 Railway 的 `PORT`**。Puma 在 Thruster 後方使用 Thruster 預設 **`TARGET_PORT`（3000）**。
-- **[`Procfile`](Procfile)**（Nixpacks／非 Docker 建置）：同上 `HTTP_PORT="${PORT:-80}"`。
+- 設 **`HTTP_PORT="${PORT:-8080}"`** — 若 Railway **沒有**注入 `PORT`，先預設對外 **8080**（常見 PaaS 慣例）。**建議你仍在 Railway → Variables 手動加 `PORT`**，數字要與 **Public Networking / 自訂網域的 target port** 一致（多數情況跟 Railway 自動值即可，例如 **8080**）。
+- 設 **`TARGET_PORT=3000`**（Puma 在容器內）。
+- **若 `PORT` 與 `TARGET_PORT` 會撞同一個 TCP 埠**（例如你手動設 **`PORT=3000`**，而 Puma 預設也想用 3000），腳本會把 **Puma 改成 3100**，避免 Thruster 與 Puma 搶同一個埠。
 
-**埠號：**
+**`Dockerfile` / [`Procfile`](Procfile)** 都改為執行 **`bin/start-web`**。
+
+**埠號對照（重點）：**
 
 | 埠 | 用途 |
 |------|------|
-| **`PORT`**（Railway） | **Thruster** 對外監聽 — 由 **Railway 注入**（常為 `8080`）。須與公開網域 **target port** 一致。 |
-| **3000**（Thruster 後方） | **Puma** 在容器內監聽（Thruster 預設 **`TARGET_PORT`**）。除非自行設定 **`TARGET_PORT`**，否則不必改。 |
-| **3100**（僅本機） | 當 **`PORT` 未設定**（例如未經 Foreman 直接 `bin/rails server`）時，**`config/puma.rb`** 使用 **`ENV.fetch("PORT", 3100)`**，本機預設 **3100**。 |
+| **`PORT`（Railway Variables）** | **Thruster 對外**監聽 = `HTTP_PORT`。請與網域 **target port** 一致。若平台沒自動給，**請自己設**（常用 **8080**；設 **3000** 也可以，程式會自動避免與 Puma 撞埠）。 |
+| **3000** | 多數情況下 **Puma** 在 Thruster 後面聽這裡。 |
+| **3100** | ① 你強制 **`PORT=3000`** 時，**Puma** 會被改聽這裡（避開 Thruster）。② **本機**沒設 `PORT` 時，`config/puma.rb` 預設聽 **3100**。 |
+
+**本機 3100 要不要跟 Railway 一樣？**  
+**不用。** 本機只是「沒設 `PORT` 時預設 3100」方便開發；Railway 請依 **`PORT` + target port** 對齊，**不必**刻意設成 3100。
 
 **建議在 Railway 服務變數中設定：**
 
@@ -279,8 +288,8 @@ bin/dev
 |----------|--------|
 | `SECRET_KEY_BASE` | 正式環境必填（可用 `bin/rails secret` 產生）。 |
 | `RAILS_MASTER_KEY` | 若使用加密 credentials，請貼上 `config/master.key` 內容。 |
-| `PORT` | 通常由 **Railway 自動設定** — Thruster 的 **`HTTP_PORT`** 會跟隨此值。 |
-| `TARGET_PORT` | 選填；Thruster 對 Puma 預設為 **3000**。僅在需要其他內部埠時設定。 |
+| `PORT` | 優先使用 Railway 自動注入；若沒有，**請手動新增**（例如 **8080**），並與 **Networking / target port** 一致。設 **3000** 時程式會自動把 Puma 改到 **3100**。 |
+| `TARGET_PORT` | 選填；一般不必設，除非你要自訂 Puma 內部埠。 |
 
 健康檢查路徑為 **`/up`**（見 [`railway.toml`](railway.toml)）。若首次部署失敗，請查看日誌是否為 **`db:prepare`** 或遷移錯誤（`bin/docker-entrypoint` 在啟動 `rails server` 時會執行資料庫準備）。
 
@@ -288,7 +297,7 @@ bin/dev
 
 #### Railway：「Application failed to respond」
 
-1. 確認 Thruster 監聽 **`PORT`**：請拉取並重新部署含上述 Dockerfile／`Procfile` 的版本，或在 Railway 變數設定 **`HTTP_PORT=$PORT`**（或 `THRUSTER_HTTP_PORT`）。
+1. 在 **Variables** 確認 **`PORT`** 有值，且與 **Public Networking / 自訂網域 target port** 相同；並已部署含 **`bin/start-web`** 的版本。
 2. 確認已設定 **`SECRET_KEY_BASE`**（以及使用 credentials 時的 **`RAILS_MASTER_KEY`**）。
 3. 查看部署日誌是否有啟動錯誤（資料庫、master key、遷移失敗等）。
 
