@@ -31,8 +31,8 @@ threads threads_count, threads_count
 # Bind all interfaces so container / PaaS health checks can reach Puma when not behind Thruster.
 bind "tcp://0.0.0.0"
 
-# Specifies the `port` that Puma will listen on to receive requests; default 3100 when PORT is unset (local).
-# Behind Thruster, Thruster sets PORT to TARGET_PORT (see Dockerfile / Procfile).
+# When PORT is unset (typical local `bin/rails server`), listen on 3100.
+# Behind Thruster, PORT is set to TARGET_PORT (Thruster default 3000 for production).
 port ENV.fetch("PORT", 3100)
 
 # Allow puma to be restarted by `bin/rails restart` command.
