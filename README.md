@@ -68,7 +68,7 @@ Theme tokens (colors, radius, sidebar variables) live in [`app/assets/tailwind/a
 | Path | Description |
 |------|-------------|
 | `/` | Dashboard — **actual expenditure** |
-| `/budgets` | Budgets — **income & expenditure** placeholders on one page |
+| `/budgets` | Budgets — two-part layout (summary + entry) like actual expenditure; **dropdown** switches income vs expenditure placeholders |
 | `/revenue_budgets` | Redirects (301) to `/budgets` |
 | `/expenditure_budgets` | Redirects (301) to `/budgets` |
 | `/settings` | Settings (placeholder) |
@@ -228,7 +228,7 @@ bin/dev
 | 路徑 | 說明 |
 |------|------|
 | `/` | 儀表板 — **實際支出** |
-| `/budgets` | 預算 — **收入與支出**占位內容於同一頁 |
+| `/budgets` | 預算 — 與實際支出相同**上下兩區**（本月資料／登錄），**下拉選單**切換收入／支出占位內容 |
 | `/revenue_budgets` | 301 重新導向至 `/budgets` |
 | `/expenditure_budgets` | 301 重新導向至 `/budgets` |
 | `/settings` | 設定（目前為占位頁） |
