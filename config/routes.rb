@@ -10,6 +10,7 @@ Rails.application.routes.draw do
   # get "service-worker" => "rails/pwa#service_worker", as: :pwa_service_worker
 
   root "dashboard#index"
+  get "expenses/history", to: "dashboard#history", as: :expense_history
 
   get "revenue_budgets", to: "revenue_budgets#index", as: :revenue_budgets
   get "expenditure_budgets", to: "expenditure_budgets#index", as: :expenditure_budgets

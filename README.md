@@ -1,4 +1,4 @@
-# Accounting Ruby
+# Accounting
 
 **Bilingual README / 雙語說明：** [English](#english) · [中文](#中文)
 

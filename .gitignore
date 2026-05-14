@@ -42,3 +42,10 @@
 # Checked in so Propshaft can resolve `tailwind.css` without a prior build (run `bin/rails tailwindcss:build` after CSS edits).
 !/app/assets/builds/tailwind.css
 
+/AGENTS.md
+/CONTRIBUTING.md
+
+/.cursor
+
+.mcp.json
+/mcp.json

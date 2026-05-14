@@ -17,6 +17,7 @@ pin "tippy.js", to: "https://cdn.jsdelivr.net/npm/tippy.js@6.3.7/+esm"
 pin "@popperjs/core", to: "https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/+esm"
 
 pin "chart.js" # @4.5.1
+pin "chart.js/auto", to: "https://cdn.jsdelivr.net/npm/chart.js@4.5.1/auto/+esm"
 pin "@kurkle/color", to: "@kurkle--color.js" # @0.3.4
 pin "embla-carousel" # @8.6.0
 pin "fuse.js" # @7.3.0
