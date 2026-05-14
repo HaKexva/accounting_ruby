@@ -84,8 +84,7 @@ module RubyUI
 
     def render_nav_links
       nav_link(href: root_path) { "實際支出" }
-      nav_link(href: revenue_budgets_path) { "收入預算" }
-      nav_link(href: expenditure_budgets_path) { "支出預算" }
+      nav_link(href: budgets_path) { "預算" }
       nav_link(href: settings_path) { "設定" }
     end
 

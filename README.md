@@ -68,14 +68,15 @@ Theme tokens (colors, radius, sidebar variables) live in [`app/assets/tailwind/a
 | Path | Description |
 |------|-------------|
 | `/` | Dashboard — **actual expenditure** |
-| `/revenue_budgets` | Revenue budgets (placeholder) |
-| `/expenditure_budgets` | Expenditure budgets (placeholder) |
+| `/budgets` | Budgets — **income & expenditure** placeholders on one page |
+| `/revenue_budgets` | Redirects (301) to `/budgets` |
+| `/expenditure_budgets` | Redirects (301) to `/budgets` |
 | `/settings` | Settings (placeholder) |
 
 #### Layout and pages
 
 - **Shell:** [`app/views/layouts/application.html.erb`](app/views/layouts/application.html.erb) wraps content in **`RubyUI::Layout`** ([`app/components/ruby_ui/layout.rb`](app/components/ruby_ui/layout.rb)): desktop sidebar, mobile sheet menu, flash, centered main column (same pattern as a typical RubyUI / hpees-style app).
-- **Pages:** Phlex classes under [`app/views/`](app/views/) (e.g. `Views::Dashboard::Index`). Zeitwerk maps folder names like `revenue_budgets/` to **`Views::RevenueBudget::Index`** (not `RevenueBudgets`) — see Rails inflection in [`config/application.rb`](config/application.rb).
+- **Pages:** Phlex classes under [`app/views/`](app/views/) (e.g. `Views::Dashboard::Index`, `Views::Budgets::Index`). Zeitwerk maps `budgets/` to **`Views::Budgets::Index`** — see Rails inflection in [`config/application.rb`](config/application.rb).
 
 #### Models
 
@@ -227,14 +228,15 @@ bin/dev
 | 路徑 | 說明 |
 |------|------|
 | `/` | 儀表板 — **實際支出** |
-| `/revenue_budgets` | 收入預算（目前為占位頁） |
-| `/expenditure_budgets` | 支出預算（目前為占位頁） |
+| `/budgets` | 預算 — **收入與支出**占位內容於同一頁 |
+| `/revenue_budgets` | 301 重新導向至 `/budgets` |
+| `/expenditure_budgets` | 301 重新導向至 `/budgets` |
 | `/settings` | 設定（目前為占位頁） |
 
 #### 版面與頁面
 
 - **外殼：** [`app/views/layouts/application.html.erb`](app/views/layouts/application.html.erb) 以 **`RubyUI::Layout`**（[`app/components/ruby_ui/layout.rb`](app/components/ruby_ui/layout.rb)）包住內容：桌面側欄、行動版抽屜選單、flash、置中主內容欄（與常見 RubyUI／hpees 風格相同）。
-- **頁面：** [`app/views/`](app/views/) 下的 Phlex 類別（例如 `Views::Dashboard::Index`）。Zeitwerk 會將 `revenue_budgets/` 等資料夾對應到 **`Views::RevenueBudget::Index`**（不是 `RevenueBudgets`）— 見 [`config/application.rb`](config/application.rb) 中的複數／單數設定。
+- **頁面：** [`app/views/`](app/views/) 下的 Phlex 類別（例如 `Views::Dashboard::Index`、`Views::Budgets::Index`）。Zeitwerk 會將 `budgets/` 對應到 **`Views::Budgets::Index`** — 見 [`config/application.rb`](config/application.rb) 中的複數／單數設定。
 
 #### 模型
 

@@ -12,7 +12,8 @@ Rails.application.routes.draw do
   root "dashboard#index"
   get "expenses/history", to: "dashboard#history", as: :expense_history
 
-  get "revenue_budgets", to: "revenue_budgets#index", as: :revenue_budgets
-  get "expenditure_budgets", to: "expenditure_budgets#index", as: :expenditure_budgets
+  get "budgets", to: "budgets#index", as: :budgets
+  get "revenue_budgets", to: redirect("/budgets")
+  get "expenditure_budgets", to: redirect("/budgets")
   get "settings", to: "settings#index", as: :settings
 end
