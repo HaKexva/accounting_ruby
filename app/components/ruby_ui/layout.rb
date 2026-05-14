@@ -4,7 +4,7 @@ module RubyUI
   class Layout < Base
     include Phlex::Rails::Helpers::Routes
 
-    APP_NAME = "Accounting Ruby"
+    APP_NAME = "記帳"
 
     def view_template(&block)
       div(class: "flex h-screen w-full overflow-hidden bg-background") do
@@ -72,7 +72,7 @@ module RubyUI
 
           SheetContent(side: :right, class: "w-[14rem] max-w-[85vw] flex flex-col") do
             SheetHeader do
-              SheetTitle { "Menu" }
+              SheetTitle { "選單" }
             end
             div(class: "mt-4 flex-1 flex flex-col gap-2") do
               render_nav_links
@@ -83,10 +83,10 @@ module RubyUI
     end
 
     def render_nav_links
-      nav_link(href: root_path) { "Actual expenditure" }
-      nav_link(href: revenue_budgets_path) { "Revenue budgets" }
-      nav_link(href: expenditure_budgets_path) { "Expenditure budgets" }
-      nav_link(href: settings_path) { "Settings" }
+      nav_link(href: root_path) { "實際支出" }
+      nav_link(href: revenue_budgets_path) { "收入預算" }
+      nav_link(href: expenditure_budgets_path) { "支出預算" }
+      nav_link(href: settings_path) { "設定" }
     end
 
     def nav_link(href:, &block)
