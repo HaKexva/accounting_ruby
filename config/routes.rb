@@ -13,6 +13,12 @@ Rails.application.routes.draw do
   get "expenses/history", to: "dashboard#history", as: :expense_history
 
   get "budgets", to: "budgets#index", as: :budgets
+  post   "budgets/revenue_budgets", to: "budgets#create_revenue_budget", as: :budget_revenue_budgets
+  patch  "budgets/revenue_budgets/:id", to: "budgets#update_revenue_budget", as: :budget_revenue_budget
+  delete "budgets/revenue_budgets/:id", to: "budgets#destroy_revenue_budget", as: :delete_budget_revenue_budget
+  post   "budgets/expenditure_budgets", to: "budgets#create_expenditure_budget", as: :budget_expenditure_budgets
+  patch  "budgets/expenditure_budgets/:id", to: "budgets#update_expenditure_budget", as: :budget_expenditure_budget
+  delete "budgets/expenditure_budgets/:id", to: "budgets#destroy_expenditure_budget", as: :delete_budget_expenditure_budget
   get "revenue_budgets", to: redirect("/budgets")
   get "expenditure_budgets", to: redirect("/budgets")
   get "settings", to: "settings#index", as: :settings

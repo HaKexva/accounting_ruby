@@ -112,6 +112,6 @@ class Views::Dashboard::History < Views::Base
   end
 
   def format_decimal(amount)
-    format("%.2f", amount.to_d)
+    Kernel.format("%.0f", amount.to_d.round)
   end
 end
