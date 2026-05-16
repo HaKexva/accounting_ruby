@@ -41,7 +41,7 @@ class Views::Dashboard::Index < Views::Base
           span(class: "text-xs text-muted-foreground tabular-nums") { current_month_label }
         end
       end
-      div(class: "flex flex-col gap-5 p-4 sm:p-6") do
+      div(class: "flex flex-col gap-5 p-5 sm:gap-6 sm:p-6") do
         p(class: "rounded-lg border border-border/50 bg-muted/25 px-3 py-2 text-sm leading-relaxed text-muted-foreground") do
           "此區顯示本月支出合計、分類摘要與列表（之後接上資料庫）。"
         end
@@ -57,9 +57,10 @@ class Views::Dashboard::Index < Views::Base
       div(class: "border-b px-4 py-3") do
         h2(class: "text-sm font-medium") { "登錄支出" }
       end
-      div(class: "p-4 sm:p-6") do
+      div(class: "flex flex-col gap-6 p-5 sm:p-6") do
+        expenditure_entry_context_row
         form(
-          class: "mx-auto max-w-xl space-y-5",
+          class: "mx-auto w-full max-w-xl space-y-6",
           method: "post",
           action: "#",
           data: {
@@ -77,6 +78,18 @@ class Views::Dashboard::Index < Views::Base
               value: Time.zone.today.strftime("%Y-%m-%d"),
               required: true
             )
+          end
+
+          expenditure_field_row(label: "項目：", id: "actual_expenditure_transaction_item") do
+            div(class: "min-w-0 flex-1 max-sm:[&_input]:min-h-11") do
+              Input(
+                id: "actual_expenditure_transaction_item",
+                name: "actual_expenditure[transaction_item]",
+                type: :text,
+                placeholder: "輸入項目名稱...",
+                required: true
+              )
+            end
           end
 
           expenditure_select_row(
@@ -104,7 +117,7 @@ class Views::Dashboard::Index < Views::Base
           )
 
           div(
-            class: "hidden flex flex-col gap-6",
+            class: "hidden flex flex-col gap-6 sm:gap-6",
             data: { expenditure_form_target: "creditCardSection" }
           ) do
             expenditure_select_row(
@@ -177,12 +190,26 @@ class Views::Dashboard::Index < Views::Base
             )
           end
 
-          div(class: "flex flex-col gap-3 pt-2 sm:flex-row sm:gap-2 [&>button]:min-h-11 sm:[&>button]:min-h-9") do
+          div(class: "flex flex-col gap-3 pt-5 sm:flex-row sm:gap-3 sm:pt-6 [&>button]:min-h-11 sm:[&>button]:min-h-9") do
             Button(type: :submit, variant: :primary, size: :md) { "儲存" }
             Button(type: :reset, variant: :outline, size: :md) { "清除" }
           end
         end
       end
+    end
+  end
+
+  def expenditure_entry_context_row
+    div(class: "flex flex-row items-start justify-between gap-3 border-b border-border/60 pb-5") do
+      div(class: "min-w-0 flex-1 pr-8 sm:pr-12") do
+        span(class: "block text-xs tabular-nums text-muted-foreground sm:text-[13px]") do
+          current_month_label
+        end
+      end
+      time(
+        class: "shrink-0 text-xs tabular-nums text-muted-foreground sm:text-[13px]",
+        data: { controller: "local-clock" }
+      )
     end
   end
 
@@ -217,7 +244,7 @@ class Views::Dashboard::Index < Views::Base
   end
 
   def expenditure_field_row(label:, id:, &)
-    div(class: "flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4") do
+    div(class: "flex flex-col gap-3.5 sm:flex-row sm:items-center sm:gap-5") do
       label(
         class: "shrink-0 text-sm font-medium leading-none sm:w-56 sm:flex-none sm:pt-2 sm:text-right",
         for: id

@@ -4,7 +4,6 @@ class ActualExpenditure < ApplicationRecord
 
   NULLIFY_OPTIONAL_STRINGS = %w[credit_card_payment_method payment_timing payment_platform].freeze
 
-  before_validation :default_transaction_item_from_category
   before_validation :nullify_blank_optional_strings
   before_validation :clear_card_only_fields_unless_credit_card
 
@@ -16,10 +15,6 @@ class ActualExpenditure < ApplicationRecord
   validate :payment_timing_required_for_credit_card
 
   private
-
-  def default_transaction_item_from_category
-    self.transaction_item = category if transaction_item.blank? && category.present?
-  end
 
   def nullify_blank_optional_strings
     NULLIFY_OPTIONAL_STRINGS.each do |attr|
