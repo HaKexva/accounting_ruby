@@ -6,6 +6,7 @@ class DashboardController < ApplicationController
   end
 
   def history
-    render Views::Dashboard::History.new
+    expenditures = ActualExpenditure.includes(:calendar_month).order(transaction_date: :desc, id: :desc)
+    render Views::Dashboard::History.new(actual_expenditures: expenditures)
   end
 end

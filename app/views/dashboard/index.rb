@@ -2,17 +2,12 @@
 
 class Views::Dashboard::Index < Views::Base
   def view_template
-    div(class: "flex min-h-0 w-full flex-col lg:mx-auto lg:max-w-3xl") do
-      div(
-        class: [
-          "sticky top-0 z-10 shrink-0 space-y-6 bg-background pb-4",
-          "border-b border-border/60"
-        ]
-      ) do
+    div(class: PAGE_SHELL) do
+      div(class: PAGE_TOP_STICKY) do
         header_row
         month_data_panel
       end
-      div(class: "shrink-0 pt-6") do
+      div(class: PAGE_BODY_BELOW_STICKY) do
         form_panel
       end
     end
@@ -21,12 +16,12 @@ class Views::Dashboard::Index < Views::Base
   private
 
   def header_row
-    div(class: "flex flex-row items-start justify-between gap-3 shrink-0") do
-      div(class: "min-w-0 flex-1 pr-2") do
-        h1(class: "text-2xl font-semibold tracking-tight") { "實際支出" }
-        p(class: "mt-1 text-sm text-muted-foreground") { "登錄與檢視支出" }
+    div(class: "flex flex-row items-start justify-between gap-4 shrink-0") do
+      div(class: "min-w-0 flex-1 space-y-2 pr-2") do
+        h1(class: "text-balance text-2xl font-semibold tracking-tight sm:text-3xl") { "實際支出" }
+        p(class: "max-w-prose text-sm leading-relaxed text-muted-foreground") { "登錄與檢視支出" }
       end
-      div(class: "flex shrink-0") do
+      div(class: "flex shrink-0 pt-0.5") do
         Link(href: expense_history_path, variant: :outline, size: :md) { "歷史紀錄" }
       end
     end
@@ -35,7 +30,7 @@ class Views::Dashboard::Index < Views::Base
   def month_data_panel
     section(
       class: [
-        "flex shrink-0 flex-col rounded-xl border bg-card text-card-foreground shadow-sm",
+        "flex shrink-0 flex-col rounded-xl border bg-card text-card-foreground shadow-sm ring-1 ring-border/40",
         "min-h-[12rem]"
       ],
       aria: { label: "本月支出資料" }
@@ -46,8 +41,8 @@ class Views::Dashboard::Index < Views::Base
           span(class: "text-xs text-muted-foreground tabular-nums") { current_month_label }
         end
       end
-      div(class: "flex flex-col gap-4 p-4 sm:p-6") do
-        p(class: "text-sm text-muted-foreground") do
+      div(class: "flex flex-col gap-5 p-4 sm:p-6") do
+        p(class: "rounded-lg border border-border/50 bg-muted/25 px-3 py-2 text-sm leading-relaxed text-muted-foreground") do
           "此區顯示本月支出合計、分類摘要與列表（之後接上資料庫）。"
         end
       end
@@ -56,7 +51,7 @@ class Views::Dashboard::Index < Views::Base
 
   def form_panel
     section(
-      class: "rounded-xl border bg-card text-card-foreground shadow-sm shrink-0",
+      class: "rounded-xl border bg-card text-card-foreground shadow-sm ring-1 ring-border/40 shrink-0",
       aria: { label: "支出登錄表單" }
     ) do
       div(class: "border-b px-4 py-3") do
@@ -182,7 +177,7 @@ class Views::Dashboard::Index < Views::Base
             )
           end
 
-          div(class: "flex gap-2 pt-1") do
+          div(class: "flex flex-col gap-3 pt-2 sm:flex-row sm:gap-2 [&>button]:min-h-11 sm:[&>button]:min-h-9") do
             Button(type: :submit, variant: :primary, size: :md) { "儲存" }
             Button(type: :reset, variant: :outline, size: :md) { "清除" }
           end
@@ -211,7 +206,7 @@ class Views::Dashboard::Index < Views::Base
   def twd_amount_input(**input_attrs)
     div(class: "flex min-w-0 items-center gap-2") do
       span(class: "shrink-0 text-sm text-muted-foreground tabular-nums select-none") { "NT$" }
-      div(class: "min-w-0 flex-1") do
+      div(class: "min-w-0 flex-1 max-sm:[&_input]:min-h-11") do
         Input(
           **input_attrs,
           type: :text,
@@ -222,7 +217,7 @@ class Views::Dashboard::Index < Views::Base
   end
 
   def expenditure_field_row(label:, id:, &)
-    div(class: "flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4") do
+    div(class: "flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4") do
       label(
         class: "shrink-0 text-sm font-medium leading-none sm:w-56 sm:flex-none sm:pt-2 sm:text-right",
         for: id
