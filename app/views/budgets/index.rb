@@ -18,7 +18,11 @@ class Views::Budgets::Index < Views::Base
   end
 
   def view_template
-    div(class: PAGE_SHELL, data: { controller: "budget-live-totals budget-allocation-chart" }) do
+    div(class: PAGE_SHELL, data: { controller: "budget-allocation-chart" }) do
+      div(
+        class: "flex min-h-0 w-full flex-1 flex-col",
+        data: { controller: "budget-live-totals" }
+      ) do
       div(
         class: [
           PAGE_TOP_STICKY,
@@ -60,6 +64,7 @@ class Views::Budgets::Index < Views::Base
         end
 
         budget_footer_hint
+      end
       end
     end
   end
