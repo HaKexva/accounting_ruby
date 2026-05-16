@@ -24,8 +24,8 @@ module RubyUI
           controller: "ruby-ui--carousel",
           ruby_ui__carousel_options_value: default_options.merge(@options).to_json,
           action: %w[
-            keydown.right->ruby-ui--carousel#scrollNext:prevent
-            keydown.left->ruby-ui--carousel#scrollPrev:prevent
+            keydown.right->ruby-ui--carousel#keydownScrollNext
+            keydown.left->ruby-ui--carousel#keydownScrollPrev
           ]
         }
       }

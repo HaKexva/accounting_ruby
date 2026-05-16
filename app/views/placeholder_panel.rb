@@ -7,9 +7,14 @@ class Views::PlaceholderPanel < Views::Base
   end
 
   def view_template
-    div(class: "rounded-xl border border-dashed bg-muted/30 p-10 text-center") do
-      p(class: "text-sm font-medium text-foreground") { @heading }
-      p(class: "mt-2 text-sm text-muted-foreground") { @hint }
+    div(
+      class: [
+        "rounded-2xl border-2 border-dashed border-border/60 bg-gradient-to-br from-muted/40 via-muted/15 to-background",
+        "px-8 py-14 text-center shadow-sm sm:px-12 sm:py-16"
+      ].join(" ")
+    ) do
+      p(class: "text-base font-semibold text-foreground") { @heading }
+      p(class: "mx-auto mt-3 max-w-md text-sm leading-relaxed text-muted-foreground") { @hint }
     end
   end
 end
