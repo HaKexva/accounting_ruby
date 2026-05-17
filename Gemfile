@@ -79,7 +79,7 @@ gem "phlex-rails", "~> 2.4"
 # Compiles app/assets/tailwind/application.css → app/assets/builds/tailwind.css (required for RubyUI / shadcn-style classes)
 gem "tailwindcss-rails", "~> 4.4"
 
-gem "tailwind_merge", "~> 1.4"
+gem "tailwind_merge", "~> 1.5"
 
 gem "rouge", "~> 4.7"
 
