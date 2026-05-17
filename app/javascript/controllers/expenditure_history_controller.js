@@ -1,5 +1,18 @@
 import { Controller } from "@hotwired/stimulus";
 
+const EDIT_FIELD_IDS = {
+  transaction_date: "history_edit_transaction_date",
+  transaction_item: "history_edit_transaction_item",
+  category: "history_edit_category",
+  payment_method: "history_edit_payment_method",
+  credit_card_payment_method: "history_edit_credit_card_payment_method",
+  payment_timing: "history_edit_payment_timing",
+  payment_platform: "history_edit_payment_platform",
+  actual_amount: "history_edit_actual_amount",
+  posted_amount: "history_edit_posted_amount",
+  note: "history_edit_note",
+};
+
 /** 歷史紀錄列表：編輯（modal）與刪除（點擊委派，避免 Stimulus action 未觸發）。 */
 export default class extends Controller {
   static targets = ["modal", "editForm", "status", "listItem", "listItemBody"];
@@ -43,7 +56,6 @@ export default class extends Controller {
 
     this.recordIdValue = Number(record.id);
     this.#populateForm(record);
-    this.#syncPaymentFields();
     this.modalTarget.classList.remove("hidden");
     document.body.classList.add("overflow-hidden");
     document.addEventListener("keydown", this._boundKeydown);
@@ -163,7 +175,10 @@ export default class extends Controller {
   #decodeRecordParam(raw) {
     const trimmed = raw.trim();
     if (trimmed.startsWith("{")) return trimmed;
-    return atob(trimmed);
+
+    const binary = atob(trimmed);
+    const bytes = Uint8Array.from(binary, (c) => c.charCodeAt(0));
+    return new TextDecoder().decode(bytes);
   }
 
   #normalizeRecord(record) {
@@ -205,32 +220,74 @@ export default class extends Controller {
   }
 
   #populateForm(record) {
-    const form = this.editFormTarget;
-    const set = (name, value) => {
-      const el = form.elements.namedItem(`actual_expenditure[${name}]`);
-      if (!el) return;
-      el.value = value ?? "";
-      el.dispatchEvent(new Event("change", { bubbles: true }));
-    };
+    this.#setField("transaction_date", record.transaction_date);
+    this.#setField("transaction_item", record.transaction_item);
+    this.#setField("actual_amount", record.actual_amount);
+    this.#setField("posted_amount", record.posted_amount);
+    this.#setField("note", record.note || "");
 
-    set("transaction_date", record.transaction_date);
-    set("transaction_item", record.transaction_item);
-    set("category", record.category);
-    set("payment_method", record.payment_method);
-    set("credit_card_payment_method", record.credit_card_payment_method || "");
-    set("payment_timing", record.payment_timing || "");
-    set("payment_platform", record.payment_platform || "");
-    set("actual_amount", record.actual_amount);
-    set("posted_amount", record.posted_amount);
-    set("note", record.note || "");
+    // 先帶入支付方式並展開子欄位，再寫入子選單（避免 disabled 無法設值）。
+    this.#setSelect("category", record.category);
+    this.#setSelect("payment_method", record.payment_method);
+    this.#syncPaymentFields({ preserveDependent: true });
+
+    this.#setSelect(
+      "credit_card_payment_method",
+      record.credit_card_payment_method
+    );
+    this.#setSelect("payment_timing", record.payment_timing);
+    this.#setSelect("payment_platform", record.payment_platform);
+
+    this.#syncPaymentFields();
   }
 
-  #syncPaymentFields() {
+  #field(name) {
+    const id = EDIT_FIELD_IDS[name];
+    if (id) {
+      const byId = document.getElementById(id);
+      if (byId) return byId;
+    }
+
+    const form = this.editFormTarget;
+    if (!form) return null;
+    return form.elements.namedItem(`actual_expenditure[${name}]`);
+  }
+
+  #setField(name, value) {
+    const el = this.#field(name);
+    if (!el) return;
+    el.value = value ?? "";
+  }
+
+  #setSelect(name, value) {
+    const el = this.#field(name);
+    if (!el || el.tagName !== "SELECT") return;
+
+    const wanted = (value ?? "").toString().trim();
+    const wasDisabled = el.disabled;
+    el.disabled = false;
+
+    if (!wanted) {
+      el.selectedIndex = 0;
+    } else {
+      el.value = wanted;
+      if (el.value !== wanted) {
+        const option = Array.from(el.options).find(
+          (opt) => opt.value === wanted || opt.text.trim() === wanted
+        );
+        if (option) el.value = option.value;
+      }
+    }
+
+    if (wasDisabled) el.disabled = wasDisabled;
+  }
+
+  #syncPaymentFields(options = {}) {
     const formController = this.application.getControllerForElementAndIdentifier(
       this.element,
       "expenditure-form"
     );
-    formController?.sync?.();
+    formController?.sync?.(options);
   }
 
   #updateListItem(record) {

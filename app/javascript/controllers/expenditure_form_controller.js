@@ -22,9 +22,14 @@ export default class extends Controller {
     requestAnimationFrame(() => this.sync());
   }
 
-  sync() {
+  /**
+   * @param {{ preserveDependent?: boolean }} [options]
+   *   preserveDependent: keep信用卡／多元支付子欄位已選值（歷史紀錄編輯帶入時用）
+   */
+  sync(options = {}) {
     if (!this.hasPaymentMethodTarget) return;
 
+    const preserve = options.preserveDependent === true;
     const value = this.paymentMethodTarget.value || "";
     const showCredit = value.includes("信用卡");
     if (this.hasCreditCardSectionTarget) {
@@ -33,7 +38,8 @@ export default class extends Controller {
 
     if (this.hasCreditCardPaymentMethodTarget) {
       this.creditCardPaymentMethodTarget.disabled = !showCredit;
-      if (!showCredit) {
+      this.creditCardPaymentMethodTarget.required = showCredit;
+      if (!showCredit && !preserve) {
         this.creditCardPaymentMethodTarget.selectedIndex = 0;
       }
     }
@@ -41,7 +47,7 @@ export default class extends Controller {
     if (this.hasPaymentTimingTarget) {
       this.paymentTimingTarget.disabled = !showCredit;
       this.paymentTimingTarget.required = showCredit;
-      if (!showCredit) {
+      if (!showCredit && !preserve) {
         this.paymentTimingTarget.selectedIndex = 0;
       }
     }
@@ -50,7 +56,7 @@ export default class extends Controller {
     if (this.hasPaymentPlatformSectionTarget) {
       this.paymentPlatformSectionTarget.classList.toggle("hidden", !showPlatform);
     }
-    if (!showPlatform && this.hasPaymentPlatformTarget) {
+    if (!showPlatform && this.hasPaymentPlatformTarget && !preserve) {
       this.paymentPlatformTarget.selectedIndex = 0;
     }
   }

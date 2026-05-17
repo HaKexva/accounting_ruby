@@ -149,7 +149,7 @@ export default class extends Controller {
     this.#resizeChart();
   }
 
-  /** HTML legend below chart: stagger alternate rows (上下交錯). */
+  /** HTML legend below chart: vertical list, label left / stats right-aligned. */
   #syncHtmlLegend(pairs) {
     if (!this.hasChartLegendTarget) return;
     const root = this.chartLegendTarget;
@@ -168,25 +168,18 @@ export default class extends Controller {
       this._percentBase > 0 ? this._percentBase : 1;
 
     const wrap = document.createElement("div");
-    wrap.className =
-      "flex flex-wrap justify-center gap-x-3 gap-y-0.5 px-0.5 sm:gap-x-4";
+    wrap.className = "flex w-full flex-col gap-2";
     wrap.setAttribute("role", "list");
 
     let colorIdx = 0;
-    pairs.forEach(([label, amount], i) => {
+    pairs.forEach(([label, amount]) => {
       const row = document.createElement("div");
       row.setAttribute("role", "listitem");
-      const stagger =
-        i % 2 === 1 ? " translate-y-1.5 sm:translate-y-2" : "";
-      row.className = [
-        "flex min-w-0 max-w-[15rem] items-center gap-1.5 text-left text-[11px]",
-        "leading-snug text-muted-foreground",
-        stagger,
-      ].join(" ");
+      row.className = "flex items-start gap-2";
 
       const dot = document.createElement("span");
       dot.className =
-        "h-2 w-2 shrink-0 rounded-sm ring-1 ring-border/50";
+        "mt-0.5 h-2.5 w-2.5 shrink-0 rounded-sm ring-1 ring-border/50";
       dot.setAttribute("aria-hidden", "true");
       if (label === "未使用收入") {
         dot.style.backgroundColor = this.#cssColor("--muted");
@@ -197,13 +190,37 @@ export default class extends Controller {
         colorIdx += 1;
       }
 
-      const text = document.createElement("span");
-      text.className = "min-w-0 break-words";
-      const pct = Math.min(100, Math.round((amount / base) * 100));
-      text.textContent = `${label}（${pct}%）`;
+      const body = document.createElement("div");
+      body.className =
+        "grid min-w-0 flex-1 grid-cols-[minmax(0,1fr)_auto] items-start gap-x-3 gap-y-0.5";
 
+      const labelEl = document.createElement("span");
+      labelEl.className =
+        "min-w-0 text-[11px] leading-snug text-foreground/90 sm:text-xs";
+      labelEl.textContent = label;
+
+      const meta = document.createElement("div");
+      meta.className = "text-right leading-tight";
+
+      const pct = Math.min(100, Math.round((amount / base) * 100));
+
+      const pctEl = document.createElement("span");
+      pctEl.className =
+        "block text-[11px] font-medium tabular-nums text-foreground sm:text-xs";
+      pctEl.textContent = `${pct}%`;
+
+      const amountEl = document.createElement("span");
+      amountEl.className =
+        "mt-0.5 block whitespace-nowrap text-[10px] tabular-nums text-muted-foreground sm:text-[11px]";
+      amountEl.textContent = `NT$${this.#formatTwd(amount)}`;
+
+      meta.appendChild(pctEl);
+      meta.appendChild(amountEl);
+
+      body.appendChild(labelEl);
+      body.appendChild(meta);
       row.appendChild(dot);
-      row.appendChild(text);
+      row.appendChild(body);
       wrap.appendChild(row);
     });
 
@@ -268,7 +285,8 @@ export default class extends Controller {
   }
 
   #formatTwd(n) {
-    return String(Math.round(Number(n) || 0));
+    const v = Math.round(Number(n) || 0);
+    return v.toLocaleString("zh-TW");
   }
 
   #cssColor(varName) {

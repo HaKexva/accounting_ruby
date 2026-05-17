@@ -43,5 +43,8 @@ class DashboardControllerTest < ActionDispatch::IntegrationTest
       assert_includes response.body, 'data-expenditure-history-action="destroy"'
     assert_match(%r{data-expenditure-history-record-param="[A-Za-z0-9+/=]+"}, response.body)
     assert_includes response.body, "data-expenditure-id="
+    assert_includes response.body, 'id="history_edit_category"'
+    assert_includes response.body, 'id="history_edit_payment_method"'
+    assert_includes response.body, 'id="history_edit_credit_card_payment_method"'
   end
 end
