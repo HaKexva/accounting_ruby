@@ -5,13 +5,22 @@ export default class extends Controller {
   static targets = [
     "kindSelect",
     "kindButton",
+    "track",
+    "indicator",
     "categoryPanel",
     "paymentMethodPanel",
     "paymentPlatformPanel"
   ];
 
   connect() {
+    this._onResize = () => this.#positionIndicator();
+    window.addEventListener("resize", this._onResize);
     this.sync();
+    requestAnimationFrame(() => this.#positionIndicator());
+  }
+
+  disconnect() {
+    window.removeEventListener("resize", this._onResize);
   }
 
   pickKind(event) {
@@ -38,13 +47,27 @@ export default class extends Controller {
     this.kindButtonTargets.forEach((button) => {
       const active = button.dataset.kindValue === kind;
       button.setAttribute("aria-pressed", active ? "true" : "false");
-      button.classList.toggle("bg-card", active);
-      button.classList.toggle("text-foreground", active);
-      button.classList.toggle("shadow-sm", active);
-      button.classList.toggle("ring-1", active);
-      button.classList.toggle("ring-border/60", active);
-      button.classList.toggle("text-muted-foreground", !active);
+      button.classList.toggle(SEGMENTED_ACTIVE_CLASS, active);
+      button.classList.toggle(SEGMENTED_INACTIVE_CLASS, !active);
     });
+
+    this.#positionIndicator();
+  }
+
+  #positionIndicator() {
+    if (!this.hasIndicatorTarget || !this.hasTrackTarget) return;
+
+    const kind = this.#kindValueFrom();
+    const active = this.kindButtonTargets.find((button) => button.dataset.kindValue === kind);
+    if (!active) return;
+
+    const trackRect = this.trackTarget.getBoundingClientRect();
+    const buttonRect = active.getBoundingClientRect();
+    const left = buttonRect.left - trackRect.left;
+
+    this.indicatorTarget.style.width = `${buttonRect.width}px`;
+    this.indicatorTarget.style.transform = `translateX(${left}px)`;
+    this.indicatorTarget.style.opacity = "1";
   }
 
   #kindValueFrom(event) {
@@ -62,3 +85,6 @@ export default class extends Controller {
     return "category";
   }
 }
+
+const SEGMENTED_ACTIVE_CLASS = "text-foreground";
+const SEGMENTED_INACTIVE_CLASS = "text-muted-foreground";

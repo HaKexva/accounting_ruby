@@ -164,7 +164,17 @@ class Views::Budgets::Index < Views::Base
     div(class: "flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4") do
       span(class: "text-base font-semibold tracking-tight text-foreground sm:text-lg") { "新增" }
       div(class: "min-w-0 flex-1 sm:max-w-md") do
-        div(class: "#{SEGMENTED_CONTROL_CLASS} w-full", role: "group", aria: { label: "預算類型" }) do
+        div(
+          class: "#{SEGMENTED_CONTROL_CLASS} w-full",
+          role: "group",
+          aria: { label: "預算類型" },
+          data: { budgets_kind_target: "track" }
+        ) do
+          span(
+            class: SEGMENTED_CONTROL_INDICATOR_CLASS,
+            data: { budgets_kind_target: "indicator" },
+            aria: { hidden: true }
+          )
           budget_kind_segment_button(:revenue, "收入預算")
           budget_kind_segment_button(:expenditure, "支出預算")
         end
