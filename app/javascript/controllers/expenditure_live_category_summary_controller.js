@@ -2,31 +2,47 @@ import { Controller } from "@hotwired/stimulus";
 
 const FORM_ID = "dashboard_actual_expenditure_form";
 
+const FIELD_IDS = {
+  category: "actual_expenditure_category",
+  posted_amount: "actual_expenditure_posted_amount",
+};
+
 /**
  * 依表單「消費類別」與「列帳金額」即時更新左側摘要：預算、類別支出、餘額。
  */
 export default class extends Controller {
   static targets = ["budgetAmount", "expenseAmount", "remainAmount", "remainLabel"];
 
-  static values = {
-    budgets: Object,
-    spent: Object,
-  };
+  #debounceTimer = null;
+  #budgets = {};
+  #spent = {};
 
   connect() {
-    this.#debounceTimer = null;
-    this.#onFormChange = (event) => {
-      if (!this.#isDashboardFormEvent(event)) return;
-      this.#scheduleRecalc();
-    };
-    this.element.addEventListener("input", this.#onFormChange);
-    this.element.addEventListener("change", this.#onFormChange);
+    this.#budgets = this.#readJsonAttribute("budgets");
+    this.#spent = this.#readJsonAttribute("spent");
+
+    const form = this.#form();
+    this._onFormChange = () => this.#scheduleRecalc();
+    if (form) {
+      form.addEventListener("input", this._onFormChange);
+      form.addEventListener("change", this._onFormChange);
+    } else {
+      this.element.addEventListener("input", this._onFormChange);
+      this.element.addEventListener("change", this._onFormChange);
+    }
+
     this.recalc();
   }
 
   disconnect() {
-    this.element.removeEventListener("input", this.#onFormChange);
-    this.element.removeEventListener("change", this.#onFormChange);
+    const form = this.#form();
+    if (form) {
+      form.removeEventListener("input", this._onFormChange);
+      form.removeEventListener("change", this._onFormChange);
+    } else {
+      this.element.removeEventListener("input", this._onFormChange);
+      this.element.removeEventListener("change", this._onFormChange);
+    }
     if (this.#debounceTimer != null) {
       clearTimeout(this.#debounceTimer);
       this.#debounceTimer = null;
@@ -40,8 +56,8 @@ export default class extends Controller {
       return;
     }
 
-    const budget = Number(this.budgetsValue[category]) || 0;
-    const saved = Number(this.spentValue[category]) || 0;
+    const budget = this.#amountFor(this.#budgets, category);
+    const saved = this.#amountFor(this.#spent, category);
     const live = this.#livePostedAmount();
     const expense = saved + live;
     const remain = budget - expense;
@@ -52,8 +68,34 @@ export default class extends Controller {
   applySpent(event) {
     const next = event.detail?.by_category;
     if (!next || typeof next !== "object") return;
-    this.spentValue = { ...next };
+    this.#spent = this.#normalizeAmountMap(next);
     this.recalc();
+  }
+
+  #readJsonAttribute(name) {
+    const attr = `data-${this.identifier}-${name}-value`;
+    const raw = this.element.getAttribute(attr);
+    if (!raw) return {};
+    try {
+      const parsed = JSON.parse(raw);
+      return this.#normalizeAmountMap(parsed);
+    } catch {
+      return {};
+    }
+  }
+
+  #normalizeAmountMap(obj) {
+    const out = {};
+    Object.entries(obj || {}).forEach(([key, value]) => {
+      const n = Number(value);
+      out[key] = Number.isFinite(n) ? n : 0;
+    });
+    return out;
+  }
+
+  #amountFor(map, category) {
+    if (map[category] != null) return Number(map[category]) || 0;
+    return 0;
   }
 
   #scheduleRecalc() {
@@ -64,17 +106,16 @@ export default class extends Controller {
     }, 150);
   }
 
-  #isDashboardFormEvent(event) {
-    const form = this.#form();
-    if (!form || !event.target) return false;
-    return form.contains(event.target);
-  }
-
   #form() {
-    return this.element.querySelector(`#${FORM_ID}`);
+    return document.getElementById(FORM_ID);
   }
 
   #field(suffix) {
+    const id = FIELD_IDS[suffix];
+    if (id) {
+      const byId = document.getElementById(id);
+      if (byId) return byId;
+    }
     const form = this.#form();
     if (!form) return null;
     return form.elements.namedItem(`actual_expenditure[${suffix}]`);

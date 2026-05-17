@@ -220,7 +220,7 @@ class Views::Budgets::Index < Views::Base
             end
           end
           div(
-            class: "min-h-0 shrink-0",
+            class: "min-h-0 w-full shrink-0 px-1 sm:px-2",
             data: { budget_allocation_chart_target: "chartLegend" },
             aria: { label: "支出類別與未使用收入圖例" }
           )

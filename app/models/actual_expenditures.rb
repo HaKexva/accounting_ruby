@@ -15,6 +15,7 @@ class ActualExpenditure < ApplicationRecord
   validates :transaction_date, presence: true
 
   validate :payment_timing_required_for_credit_card
+  validate :credit_card_payment_method_required_for_credit_card
 
   private
 
@@ -36,5 +37,11 @@ class ActualExpenditure < ApplicationRecord
     return unless payment_method.to_s.include?("信用卡")
 
     errors.add(:payment_timing, :blank) if payment_timing.blank?
+  end
+
+  def credit_card_payment_method_required_for_credit_card
+    return unless payment_method.to_s.include?("信用卡")
+
+    errors.add(:credit_card_payment_method, :blank) if credit_card_payment_method.blank?
   end
 end

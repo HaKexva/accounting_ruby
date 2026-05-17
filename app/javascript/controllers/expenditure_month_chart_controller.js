@@ -352,23 +352,17 @@ export default class extends Controller {
 
     const base = this._percentBase > 0 ? this._percentBase : 1;
     const wrap = document.createElement("div");
-    wrap.className =
-      "flex flex-wrap justify-center gap-x-3 gap-y-0.5 px-0.5 sm:gap-x-4";
+    wrap.className = "flex w-full flex-col gap-2";
     wrap.setAttribute("role", "list");
 
-    rows.forEach((row, i) => {
+    rows.forEach((row) => {
       const el = document.createElement("div");
       el.setAttribute("role", "listitem");
-      const stagger = i % 2 === 1 ? " translate-y-1.5 sm:translate-y-2" : "";
-      el.className = [
-        "flex min-w-0 max-w-[18rem] items-center gap-1.5 text-left text-[11px]",
-        "leading-snug text-muted-foreground",
-        stagger,
-      ].join(" ");
+      el.className = "flex items-start gap-2";
 
       const swatch = document.createElement("span");
       swatch.className =
-        "relative h-2 w-3 shrink-0 overflow-hidden rounded-sm ring-1 ring-border/50";
+        "relative mt-0.5 h-2.5 w-3 shrink-0 overflow-hidden rounded-sm ring-1 ring-border/50";
       swatch.setAttribute("aria-hidden", "true");
 
       const light = document.createElement("span");
@@ -386,27 +380,53 @@ export default class extends Controller {
         swatch.appendChild(dark);
       }
 
-      const text = document.createElement("span");
-      text.className = "min-w-0 break-words";
+      const body = document.createElement("div");
+      body.className =
+        "grid min-w-0 flex-1 grid-cols-[minmax(0,1fr)_auto] items-start gap-x-3 gap-y-0.5";
+
+      const label = document.createElement("span");
+      label.className =
+        "min-w-0 text-[11px] leading-snug text-foreground/90 sm:text-xs";
+      label.textContent = row.label;
+
+      const meta = document.createElement("div");
+      meta.className = "text-right leading-tight";
+
       const total = row.spent + row.unused;
       const pct = Math.min(100, Math.round((total / base) * 100));
 
-      if (row.surplus) {
-        text.textContent = `${row.label}（${pct}%）`;
-      } else if (row.unused > 0 && row.spent > 0) {
-        text.textContent = `${row.label}（${pct}%：已用 ${this.#formatTwd(row.spent)}／未用 ${this.#formatTwd(row.unused)}）`;
-      } else if (row.spent > 0) {
-        text.textContent = `${row.label}（${pct}%：已用 ${this.#formatTwd(row.spent)}）`;
-      } else {
-        text.textContent = `${row.label}（${pct}%：未用 ${this.#formatTwd(row.unused)}）`;
-      }
+      const pctEl = document.createElement("span");
+      pctEl.className =
+        "block text-[11px] font-medium tabular-nums text-foreground sm:text-xs";
+      pctEl.textContent = `${pct}%`;
 
+      const detailEl = document.createElement("span");
+      detailEl.className =
+        "mt-0.5 block whitespace-nowrap text-[10px] tabular-nums text-muted-foreground sm:text-[11px]";
+      detailEl.textContent = this.#legendDetailText(row);
+
+      meta.appendChild(pctEl);
+      if (detailEl.textContent) meta.appendChild(detailEl);
+
+      body.appendChild(label);
+      body.appendChild(meta);
       el.appendChild(swatch);
-      el.appendChild(text);
+      el.appendChild(body);
       wrap.appendChild(el);
     });
 
     root.appendChild(wrap);
+  }
+
+  #legendDetailText(row) {
+    if (row.surplus) return "";
+
+    if (row.spent > 0 && row.unused > 0) {
+      return `已用 ${this.#formatTwd(row.spent)} · 未用 ${this.#formatTwd(row.unused)}`;
+    }
+    if (row.spent > 0) return `已用 ${this.#formatTwd(row.spent)}`;
+    if (row.unused > 0) return `未用 ${this.#formatTwd(row.unused)}`;
+    return "";
   }
 
   #resizeChart() {
@@ -418,7 +438,8 @@ export default class extends Controller {
   }
 
   #formatTwd(n) {
-    return String(Math.round(Number(n) || 0));
+    const v = Math.round(Number(n) || 0);
+    return `NT$${v.toLocaleString("zh-TW")}`;
   }
 
   #lightSliceColor(chartVar) {

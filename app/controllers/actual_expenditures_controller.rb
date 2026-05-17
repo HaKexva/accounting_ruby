@@ -183,7 +183,7 @@ class ActualExpendituresController < ApplicationController
   def month_tally_json(calendar_month, user)
     scope = ActualExpenditure.where(user: user, calendar_month: calendar_month)
     total = scope.sum(:actual_amount)
-    by_cat = scope.group(:category).sum(:actual_amount)
+    by_cat = scope.group(:category).sum(:posted_amount)
     {
       total: total.to_s("F"),
       count: scope.count,

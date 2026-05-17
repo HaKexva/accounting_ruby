@@ -253,7 +253,9 @@ class Views::Dashboard::History < Views::Base
         id: "history_edit_credit_card_payment_method",
         name: "actual_expenditure[credit_card_payment_method]",
         options: ExpenditureTaxonomy::CREDIT_CARD_PAYMENT_KINDS,
-        include_blank: true,
+        required: false,
+        prompt: "請選擇",
+        include_blank: false,
         form: EDIT_FORM_ID,
         native_select: {
           disabled: true,

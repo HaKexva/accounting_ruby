@@ -102,19 +102,20 @@ class Views::Dashboard::Index < Views::Base
   def month_data_panel
     section(class: "#{MONTH_SUMMARY_SECTION_CLASS}", aria: { label: "本月實際支出摘要" }) do
       div(class: MONTH_SUMMARY_HEADER_CLASS) do
-        div(class: "flex flex-col gap-0.5 sm:flex-row sm:items-baseline sm:justify-between") do
-          div(class: "min-w-0") do
+        div(class: "flex flex-col gap-1") do
+          div(class: "flex items-baseline justify-between gap-2") do
             h2(class: MONTH_SUMMARY_TITLE_CLASS) { "本月摘要" }
-            p(class: "mt-0.5 text-[11px] leading-snug text-muted-foreground sm:text-xs") do
-              plain "依目前選擇的消費類別（預算來自本月支出預算）"
+            span(class: "#{MONTH_SUMMARY_PERIOD_CLASS} shrink-0 whitespace-nowrap text-right") do
+              plain calendar_month_label
+              plain " · "
+              span(
+                class: "tabular-nums",
+                data: { actual_expenditure_form_target: "monthCount" }
+              ) { plain "#{@month_count} 筆" }
             end
           end
-          div(class: "flex flex-col items-end gap-0.5 shrink-0") do
-            span(class: MONTH_SUMMARY_PERIOD_CLASS) { calendar_month_label }
-            span(
-              class: "text-[10px] tabular-nums text-muted-foreground sm:text-xs",
-              data: { actual_expenditure_form_target: "monthCount" }
-            ) { plain "#{@month_count} 筆" }
+          p(class: "text-[11px] leading-snug text-muted-foreground sm:text-xs") do
+            plain "依目前選擇的消費類別（預算來自本月支出預算）"
           end
         end
       end
@@ -153,7 +154,7 @@ class Views::Dashboard::Index < Views::Base
             end
           end
           div(
-            class: "min-h-0 shrink-0",
+            class: "min-h-0 w-full shrink-0 px-1 sm:px-2",
             data: { expenditure_month_chart_target: "chartLegend" },
             aria: { label: "類別圖例" }
           )
@@ -267,7 +268,9 @@ class Views::Dashboard::Index < Views::Base
               id: "actual_expenditure_credit_card_payment_method",
               name: "actual_expenditure[credit_card_payment_method]",
               options: ExpenditureTaxonomy::CREDIT_CARD_PAYMENT_KINDS,
-              include_blank: true,
+              required: false,
+              prompt: "請選擇",
+              include_blank: false,
               form: ACTUAL_EXPENDITURE_FORM_ID,
               native_select: {
                 disabled: true,

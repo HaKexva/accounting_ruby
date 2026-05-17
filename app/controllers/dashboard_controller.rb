@@ -15,7 +15,7 @@ class DashboardController < ApplicationController
         ActualExpenditure.none
       end
 
-    by_category = month_scope.group(:category).sum(:actual_amount)
+    by_category = month_scope.group(:category).sum(:posted_amount)
     month_total = month_scope.sum(:actual_amount)
     month_count = month_scope.count
 
