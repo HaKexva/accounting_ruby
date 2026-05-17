@@ -14,6 +14,7 @@ module RubyUI
           render_mobile_header
 
           main(
+            id: "app-main-scroll",
             class: [
               "flex-1 overflow-y-auto overflow-x-hidden min-h-0",
               "px-4 py-6 sm:px-6 sm:py-8 lg:px-10",
@@ -80,6 +81,7 @@ module RubyUI
 
     def render_mobile_header
       header(
+        id: "app-mobile-header",
         class: [
           "lg:hidden flex items-center justify-between shrink-0",
           "border-b border-border/80 bg-card/95 backdrop-blur-md px-4 py-3",

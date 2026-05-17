@@ -11,7 +11,7 @@ export default class extends Controller {
   ];
 
   connect() {
-    this.sync();
+    if (this.hasPaymentMethodTarget) this.sync();
   }
 
   paymentMethodChanged() {
@@ -23,9 +23,13 @@ export default class extends Controller {
   }
 
   sync() {
+    if (!this.hasPaymentMethodTarget) return;
+
     const value = this.paymentMethodTarget.value || "";
     const showCredit = value.includes("信用卡");
-    this.creditCardSectionTarget.classList.toggle("hidden", !showCredit);
+    if (this.hasCreditCardSectionTarget) {
+      this.creditCardSectionTarget.classList.toggle("hidden", !showCredit);
+    }
 
     if (this.hasCreditCardPaymentMethodTarget) {
       this.creditCardPaymentMethodTarget.disabled = !showCredit;
@@ -43,7 +47,9 @@ export default class extends Controller {
     }
 
     const showPlatform = value === "多元支付";
-    this.paymentPlatformSectionTarget.classList.toggle("hidden", !showPlatform);
+    if (this.hasPaymentPlatformSectionTarget) {
+      this.paymentPlatformSectionTarget.classList.toggle("hidden", !showPlatform);
+    }
     if (!showPlatform && this.hasPaymentPlatformTarget) {
       this.paymentPlatformTarget.selectedIndex = 0;
     }

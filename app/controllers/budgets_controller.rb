@@ -1,10 +1,7 @@
 # frozen_string_literal: true
 
 class BudgetsController < ApplicationController
-  # Until Google (or similar) auth is wired, use the first User or a dedicated
-  # local trial row so budgets can be tried without account binding.
-  TRIAL_USER_EMAIL = "trial@local.app"
-  TRIAL_USER_GOOGLE_UID = "local-trial-user"
+  include TrialAccount
 
   before_action :set_budget_context, only: %i[
     create_revenue_budget update_revenue_budget destroy_revenue_budget
@@ -155,38 +152,25 @@ class BudgetsController < ApplicationController
   end
 
   def budget_index_state
-    user = budgets_owner
+    user = trial_account_owner
     return [ [], [], nil ] unless user
 
     today = Time.zone.today
-    calendar_month = CalendarMonth.find_or_create_by!(user: user, year: today.year, month: today.month)
+    calendar_month = CalendarMonth.find_or_create_by!(year: today.year, month: today.month)
     revenue_budgets = RevenueBudget.where(calendar_month: calendar_month).order(:id).to_a
     expenditure_budgets = ExpenditureBudget.where(calendar_month: calendar_month).order(:id).to_a
     [ revenue_budgets, expenditure_budgets, calendar_month ]
   end
 
-  def budgets_owner
-    user = current_user if respond_to?(:current_user, true)
-    return user if user.present?
-
-    User.order(:id).first || ensure_trial_user
-  end
-
-  def ensure_trial_user
-    User.find_or_create_by!(email: TRIAL_USER_EMAIL) do |u|
-      u.google_uid = TRIAL_USER_GOOGLE_UID
-    end
-  end
-
   def set_budget_context
-    @user = budgets_owner
+    @user = trial_account_owner
     unless @user
       redirect_to budgets_path, alert: "無法準備試用環境，請稍後再試。"
       return
     end
 
     today = Time.zone.today
-    @calendar_month = CalendarMonth.find_or_create_by!(user: @user, year: today.year, month: today.month)
+    @calendar_month = CalendarMonth.find_or_create_by!(year: today.year, month: today.month)
   end
 
   def revenue_scope

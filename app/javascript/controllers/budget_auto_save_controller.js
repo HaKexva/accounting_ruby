@@ -65,7 +65,25 @@ export default class extends Controller {
       }
 
       if (json.id != null && this.#isNewRecord()) {
+        const slide = this.#slideRoot();
+        const track = slide?.parentElement;
+        let blankClone = null;
+        if (slide && track) {
+          blankClone = slide.cloneNode(true);
+          this.#prepareFreshBlankSlide(blankClone);
+        }
+
         this.#promoteNewToSaved(json.id);
+
+        if (slide) {
+          const { oldToken, newToken } = this.#savedIdTokens(json.id);
+          this.#renameDomTokensInSubtree(slide, oldToken, newToken);
+        }
+
+        if (blankClone && track) {
+          track.appendChild(blankClone);
+          this.#reinitCarouselAfterSlidesChange(slide);
+        }
       }
 
       this.initialSnapshot = this.#snapshot(form);
@@ -82,6 +100,82 @@ export default class extends Controller {
 
   #isNewRecord() {
     return !this.hasRecordIdValue || this.recordIdValue <= 0;
+  }
+
+  #slideRoot() {
+    return this.element.closest('[aria-roledescription="slide"]');
+  }
+
+  /** POST collection URL from member prefix `/budgets/…_budgets/`. */
+  #collectionUrl() {
+    const p = this.memberPrefixValue || "";
+    return p.endsWith("/") ? p.slice(0, -1) : p;
+  }
+
+  #savedIdTokens(id) {
+    const isRevenue = (this.memberPrefixValue || "").includes("revenue_budgets");
+    const oldToken = isRevenue ? "rev_new" : "exp_new";
+    const newToken = isRevenue ? `rev_${id}` : `exp_${id}`;
+    return { oldToken, newToken };
+  }
+
+  /** Clone is taken before promote; reset fields and POST action so it stays a blank card. */
+  #prepareFreshBlankSlide(root) {
+    const form = root.querySelector("form");
+    if (form) {
+      form.action = this.#collectionUrl();
+      const method = form.querySelector('input[name="_method"]');
+      method?.remove();
+      form.reset();
+    }
+
+    const autoRoot = root.querySelector('[data-controller*="budget-auto-save"]');
+    if (autoRoot?.dataset) {
+      delete autoRoot.dataset.budgetAutoSaveRecordIdValue;
+    }
+
+    const status = root.querySelector('[data-budget-auto-save-target="status"]');
+    if (status) {
+      status.textContent = "";
+      status.classList.add("hidden");
+    }
+  }
+
+  #renameDomTokensInSubtree(root, oldToken, newToken) {
+    if (!root || oldToken === newToken) return;
+
+    [ root, ...root.querySelectorAll("*") ].forEach((el) => {
+      if (el.id?.includes(oldToken)) {
+        el.id = el.id.split(oldToken).join(newToken);
+      }
+      const htmlFor = el.getAttribute("for");
+      if (htmlFor?.includes(oldToken)) {
+        el.setAttribute("for", htmlFor.split(oldToken).join(newToken));
+      }
+      const aria = el.getAttribute("aria-controls");
+      if (aria?.includes(oldToken)) {
+        el.setAttribute("aria-controls", aria.split(oldToken).join(newToken));
+      }
+    });
+  }
+
+  #reinitCarouselAfterSlidesChange(slideEl) {
+    const carouselRoot = slideEl.closest('[data-controller*="ruby-ui--carousel"]');
+    if (!carouselRoot) return;
+
+    const carouselCtrl = this.application.getControllerForElementAndIdentifier(
+      carouselRoot,
+      "ruby-ui--carousel"
+    );
+    const embla = carouselCtrl?.carousel;
+    if (!embla) return;
+
+    embla.reInit();
+    requestAnimationFrame(() => {
+      const snaps = embla.scrollSnapList();
+      const last = Math.max(0, snaps.length - 1);
+      carouselCtrl.scrollToIndex(last);
+    });
   }
 
   #promoteNewToSaved(id) {

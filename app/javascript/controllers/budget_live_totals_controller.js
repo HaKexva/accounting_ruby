@@ -17,11 +17,24 @@ export default class extends Controller {
   }
 
   recalc() {
-    const revInputs = this.element.querySelectorAll('input[name="revenue_budget[amount]"]');
-    const expInputs = this.element.querySelectorAll('input[name="expenditure_budget[amount]"]');
+    const revInputs = this.element.querySelectorAll(
+      'input[name="revenue_budget[amount]"]'
+    );
+    const expInputs = this.element.querySelectorAll(
+      'input[name="expenditure_budget[amount]"]'
+    );
 
     const revSum = this.#sumInputs(revInputs);
     const expSum = this.#sumInputs(expInputs);
+
+    const revCount = this.#savedSlideCount(
+      '[data-budgets-kind-target="revenuePanel"]',
+      'input[name="revenue_budget[amount]"]'
+    );
+    const expCount = this.#savedSlideCount(
+      '[data-budgets-kind-target="expenditurePanel"]',
+      'input[name="expenditure_budget[amount]"]'
+    );
 
     if (this.hasRevenueTotalTarget) {
       this.revenueTotalTarget.textContent = `NT$${this.#formatTwd(revSum)}`;
@@ -33,11 +46,20 @@ export default class extends Controller {
       this.netTotalTarget.textContent = `NT$${this.#formatTwd(revSum - expSum)}`;
     }
     if (this.hasRevenueCountTarget) {
-      this.revenueCountTarget.textContent = `${revInputs.length} 筆`;
+      this.revenueCountTarget.textContent = `${revCount} 筆`;
     }
     if (this.hasExpenditureCountTarget) {
-      this.expenditureCountTarget.textContent = `${expInputs.length} 筆`;
+      this.expenditureCountTarget.textContent = `${expCount} 筆`;
     }
+  }
+
+  /** Decks always end with one blank “new” slide — do not count it in 筆數. */
+  #savedSlideCount(panelSelector, inputSelector) {
+    const panel = this.element.querySelector(panelSelector);
+    if (!panel) return 0;
+
+    const n = panel.querySelectorAll(inputSelector).length;
+    return n > 0 ? n - 1 : 0;
   }
 
   #sumInputs(inputs) {
