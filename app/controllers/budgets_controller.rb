@@ -1,8 +1,6 @@
 # frozen_string_literal: true
 
 class BudgetsController < ApplicationController
-  include TrialAccount
-
   before_action :set_budget_context, only: %i[
     create_revenue_budget update_revenue_budget destroy_revenue_budget
     create_expenditure_budget update_expenditure_budget destroy_expenditure_budget

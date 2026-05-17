@@ -19,7 +19,7 @@ Built with **Rails 8.1**, **Phlex** views, **RubyUI** (Tailwind / shadcn-style),
 | **預算** (`/budgets`) | Set monthly **revenue** and **expenditure** budgets (carousel cards, auto-save, allocation chart) |
 | **設定** (`/settings`) | Manage per-user lists: 消費類別, 支付方式, 支付平台 (used in expense forms) |
 
-Until Google sign-in is wired, the app uses a **local trial user** (`TrialAccount` concern) so forms work without OAuth.
+Sign in with **Google OAuth** at `/login` in production. **Local development** skips login and uses an automatic trial account (`TrialAccount`); tests use fixture users.
 
 ### Requirements
 
@@ -58,6 +58,8 @@ bin/dev
 | `/expenses/history` | Expense history (edit / delete) |
 | `/budgets` | Monthly revenue & expenditure budgets |
 | `/settings` | Taxonomy: categories, payment methods, platforms |
+| `/login` | Sign in (Google OAuth or local trial) |
+| `/logout` | Sign out (DELETE) |
 | `/up` | Health check (used by Railway) |
 | `/revenue_budgets`, `/expenditure_budgets` | Redirect to `/budgets` |
 
@@ -139,7 +141,7 @@ See [`AGENTS.md`](AGENTS.md) for branch/PR workflow and Linear issue conventions
 | **預算**（`/budgets`） | 每月**收入**與**支出**預算（輪播卡片、自動儲存、配置圖） |
 | **設定**（`/settings`） | 管理個人選項：消費類別、支付方式、支付平台 |
 
-尚未接上 Google 登入前，應用透過 **試用帳號**（`TrialAccount`）讓表單可正常操作。
+本機開發不需登入，自動使用 **試用帳號**（`TrialAccount`）；正式環境以 **Google OAuth** 登入。
 
 ### 環境需求
 

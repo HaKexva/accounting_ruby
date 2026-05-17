@@ -96,6 +96,7 @@ module RubyUI
         nav(class: "flex-1 px-3 py-4 flex flex-col gap-1", aria: { label: "主要導覽" }) do
           render_nav_links
         end
+        render_account_footer
       end
     end
 
@@ -130,7 +131,24 @@ module RubyUI
             nav(class: "mt-4 flex-1 flex flex-col gap-2", aria: { label: "主要導覽" }) do
               render_nav_links
             end
+            div(class: "mt-auto border-t border-border/60 pt-4") do
+              render_account_footer
+            end
           end
+        end
+      end
+    end
+
+    def render_account_footer
+      user = view_context.current_user
+      return unless user
+
+      div(class: "border-t border-sidebar-border/80 px-3 py-4") do
+        p(class: "truncate px-1 text-xs text-muted-foreground", title: user.email) { user.email }
+        form(action: view_context.logout_path, method: "post", class: "mt-2") do
+          input(type: "hidden", name: "authenticity_token", value: view_context.form_authenticity_token)
+          input(type: "hidden", name: "_method", value: "delete")
+          Button(type: :submit, variant: :outline, size: :sm, class: "w-full") { "登出" }
         end
       end
     end
