@@ -18,7 +18,7 @@ class Views::Settings::Index < Views::Base
       else
         render Views::PlaceholderPanel.new(
           heading: "無法載入設定",
-          hint: "請稍後再試，或確認試用帳號已建立。"
+          hint: "資料庫尚未套用最新 migration。請在 Railway 執行 bin/rails db:prepare 或重新部署後再試。"
         )
       end
     end

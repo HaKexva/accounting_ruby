@@ -14,6 +14,15 @@ class SettingsController < ApplicationController
       return
     end
 
+    unless ExpenditureTaxonomy.persisted_taxonomy_available?
+      render Views::Settings::Index.new(
+        taxonomy_available: false,
+        items_by_kind: {},
+        initial_kind: "category"
+      )
+      return
+    end
+
     ExpenditureTaxonomy.ensure_seeded!(user)
     kind = valid_kind(params[:kind])
     items_by_kind = ExpenditureTaxonomyItem::KINDS.index_with do |k|
@@ -30,6 +39,7 @@ class SettingsController < ApplicationController
   def create_taxonomy_item
     user = require_taxonomy_user!
     return unless user
+    return unless require_persisted_taxonomy!
 
     item = user.expenditure_taxonomy_items.build(taxonomy_item_attributes)
     item.position = next_position_for(user, item.kind)
@@ -45,6 +55,7 @@ class SettingsController < ApplicationController
   def update_taxonomy_item
     user = require_taxonomy_user!
     return unless user
+    return unless require_persisted_taxonomy!
 
     item = user.expenditure_taxonomy_items.find(params[:id])
     if item.update(taxonomy_item_attributes.except(:kind))
@@ -60,6 +71,7 @@ class SettingsController < ApplicationController
   def destroy_taxonomy_item
     user = require_taxonomy_user!
     return unless user
+    return unless require_persisted_taxonomy!
 
     item = user.expenditure_taxonomy_items.find(params[:id])
     kind = item.kind
@@ -82,6 +94,13 @@ class SettingsController < ApplicationController
       return nil
     end
     user
+  end
+
+  def require_persisted_taxonomy!
+    return true if ExpenditureTaxonomy.persisted_taxonomy_available?
+
+    redirect_to settings_path, alert: "資料庫尚未更新，請重新部署或執行 bin/rails db:prepare。"
+    false
   end
 
   def valid_kind(raw)

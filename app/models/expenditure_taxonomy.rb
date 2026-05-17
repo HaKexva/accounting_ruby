@@ -69,15 +69,23 @@ class ExpenditureTaxonomy
     end
 
     def names_for(kind)
-      return [] unless @user
+      defaults = DEFAULTS_BY_KIND.fetch(kind, [])
+      return defaults unless ExpenditureTaxonomy.persisted_taxonomy_available?
+      return defaults unless @user
 
       ExpenditureTaxonomyItem.for_kind(kind).where(user: @user).pluck(:name)
     end
 
     def items_for(kind)
-      return ExpenditureTaxonomyItem.none unless @user
+      return ExpenditureTaxonomyItem.none unless persisted_taxonomy_available? && @user
 
       ExpenditureTaxonomyItem.for_kind(kind).where(user: @user)
+    end
+
+    private
+
+    def persisted_taxonomy_available?
+      ExpenditureTaxonomy.persisted_taxonomy_available?
     end
   end
 
@@ -85,8 +93,17 @@ class ExpenditureTaxonomy
     Catalog.new(user)
   end
 
+  def self.persisted_taxonomy_available?
+    return @persisted_taxonomy_available unless @persisted_taxonomy_available.nil?
+
+    @persisted_taxonomy_available = ActiveRecord::Base.connection.table_exists?(:expenditure_taxonomy_items)
+  rescue StandardError
+    @persisted_taxonomy_available = false
+  end
+
   def self.ensure_seeded!(user)
     return unless user
+    return unless persisted_taxonomy_available?
     return if ExpenditureTaxonomyItem.where(user: user).exists?
 
     ExpenditureTaxonomyItem.transaction do

@@ -5,6 +5,9 @@
 # If both would be the same (e.g. PORT=3000 and default Puma 3000), bump Puma to 3100 to avoid bind conflict.
 set -e
 
+# Railway/Procfile uses this script (not bare `rails server`), so migrate here — see bin/docker-entrypoint.
+./bin/rails db:prepare
+
 export HTTP_PORT="${PORT:-8080}"
 export TARGET_PORT="${TARGET_PORT:-3000}"
 if [ "$HTTP_PORT" = "$TARGET_PORT" ]; then
