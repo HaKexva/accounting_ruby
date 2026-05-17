@@ -39,6 +39,6 @@ module Authentication
   end
 
   def allow_anonymous_trial?
-    Rails.env.test? || (Rails.env.local? && !GoogleOauth.configured?)
+    Rails.env.test? || Rails.env.local?
   end
 end
