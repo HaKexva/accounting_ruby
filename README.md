@@ -19,7 +19,7 @@ Built with **Rails 8.1**, **Phlex** views, **RubyUI** (Tailwind / shadcn-style),
 | **預算** (`/budgets`) | Set monthly **revenue** and **expenditure** budgets (carousel cards, auto-save, allocation chart) |
 | **設定** (`/settings`) | Manage per-user lists: 消費類別, 支付方式, 支付平台 (used in expense forms) |
 
-Until Google sign-in is wired, the app uses a **local trial user** (`TrialAccount` concern) so forms work without OAuth.
+Sign in with **Google OAuth** at `/login`. Without `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET`, local dev can use **試用帳號** on the login page; tests still use fixture users.
 
 ### Requirements
 
@@ -58,6 +58,8 @@ bin/dev
 | `/expenses/history` | Expense history (edit / delete) |
 | `/budgets` | Monthly revenue & expenditure budgets |
 | `/settings` | Taxonomy: categories, payment methods, platforms |
+| `/login` | Sign in (Google OAuth or local trial) |
+| `/logout` | Sign out (DELETE) |
 | `/up` | Health check (used by Railway) |
 | `/revenue_budgets`, `/expenditure_budgets` | Redirect to `/budgets` |
 

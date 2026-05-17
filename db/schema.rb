@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_05_17_120000) do
+ActiveRecord::Schema[8.1].define(version: 2026_05_17_140000) do
   create_table "actual_expenditures", force: :cascade do |t|
     t.decimal "actual_amount", null: false
     t.integer "calendar_month_id", null: false
@@ -81,6 +81,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_17_120000) do
     t.string "email", null: false
     t.string "google_uid", null: false
     t.datetime "updated_at", null: false
+    t.index ["email"], name: "index_users_on_email", unique: true
+    t.index ["google_uid"], name: "index_users_on_google_uid", unique: true
   end
 
   add_foreign_key "expenditure_taxonomy_items", "users"

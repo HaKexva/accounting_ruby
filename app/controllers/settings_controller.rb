@@ -1,8 +1,6 @@
 # frozen_string_literal: true
 
 class SettingsController < ApplicationController
-  include TrialAccount
-
   def index
     user = trial_account_owner
     unless user

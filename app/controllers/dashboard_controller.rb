@@ -1,8 +1,6 @@
 # frozen_string_literal: true
 
 class DashboardController < ApplicationController
-  include TrialAccount
-
   def index
     user = trial_account_owner
     today = Time.zone.today

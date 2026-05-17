@@ -1,8 +1,6 @@
 # frozen_string_literal: true
 
 class ActualExpendituresController < ApplicationController
-  include TrialAccount
-
   def create
     user = trial_account_owner
     unless user
