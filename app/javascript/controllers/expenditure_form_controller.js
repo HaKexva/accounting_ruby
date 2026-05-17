@@ -56,8 +56,12 @@ export default class extends Controller {
     if (this.hasPaymentPlatformSectionTarget) {
       this.paymentPlatformSectionTarget.classList.toggle("hidden", !showPlatform);
     }
-    if (!showPlatform && this.hasPaymentPlatformTarget && !preserve) {
-      this.paymentPlatformTarget.selectedIndex = 0;
+    if (this.hasPaymentPlatformTarget) {
+      this.paymentPlatformTarget.disabled = !showPlatform;
+      this.paymentPlatformTarget.required = showPlatform;
+      if (!showPlatform && !preserve) {
+        this.paymentPlatformTarget.selectedIndex = 0;
+      }
     }
   }
 }

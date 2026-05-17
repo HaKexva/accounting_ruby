@@ -5,8 +5,9 @@ class Views::Dashboard::History < Views::Base
 
   EDIT_FORM_ID = "history_edit_actual_expenditure_form"
 
-  def initialize(actual_expenditures:)
+  def initialize(actual_expenditures:, taxonomy:)
     @actual_expenditures = actual_expenditures
+    @taxonomy = taxonomy
   end
 
   def view_template
@@ -222,7 +223,7 @@ class Views::Dashboard::History < Views::Base
       label: "消費類別：",
       id: "history_edit_category",
       name: "actual_expenditure[category]",
-      options: ExpenditureTaxonomy::CATEGORIES,
+      options: @taxonomy.categories,
       required: true,
       prompt: "請選擇",
       form: EDIT_FORM_ID
@@ -232,7 +233,7 @@ class Views::Dashboard::History < Views::Base
       label: "支付方式：",
       id: "history_edit_payment_method",
       name: "actual_expenditure[payment_method]",
-      options: ExpenditureTaxonomy::PAYMENT_METHODS,
+      options: @taxonomy.payment_methods,
       required: true,
       prompt: "請選擇",
       form: EDIT_FORM_ID,
@@ -282,10 +283,11 @@ class Views::Dashboard::History < Views::Base
         label: "支付平台：",
         id: "history_edit_payment_platform",
         name: "actual_expenditure[payment_platform]",
-        options: ExpenditureTaxonomy::PAYMENT_PLATFORMS,
-        include_blank: true,
+        options: @taxonomy.payment_platforms,
+        prompt: "請選擇",
         form: EDIT_FORM_ID,
         native_select: {
+          disabled: true,
           data: { expenditure_form_target: "paymentPlatform" }
         }
       )

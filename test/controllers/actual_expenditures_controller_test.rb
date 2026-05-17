@@ -11,7 +11,7 @@ class ActualExpendituresControllerTest < ActionDispatch::IntegrationTest
                actual_expenditure: {
                  transaction_date: "2026-05-10",
                  transaction_item: "午餐",
-                 category: ExpenditureTaxonomy::CATEGORIES.first,
+                 category: ExpenditureTaxonomy::DEFAULT_CATEGORIES.first,
                  payment_method: "現金",
                  actual_amount: "120",
                  posted_amount: "120",
@@ -38,7 +38,7 @@ class ActualExpendituresControllerTest < ActionDispatch::IntegrationTest
                actual_expenditure: {
                  transaction_date: "2026-04-01",
                  transaction_item: "舊月",
-                 category: ExpenditureTaxonomy::CATEGORIES.first,
+                 category: ExpenditureTaxonomy::DEFAULT_CATEGORIES.first,
                  payment_method: "現金",
                  actual_amount: "50",
                  posted_amount: "50",
@@ -62,7 +62,7 @@ class ActualExpendituresControllerTest < ActionDispatch::IntegrationTest
             actual_expenditure: {
               transaction_date: expenditure.transaction_date.iso8601,
               transaction_item: "更新項目",
-              category: ExpenditureTaxonomy::CATEGORIES.first,
+              category: ExpenditureTaxonomy::DEFAULT_CATEGORIES.first,
               payment_method: "現金",
               actual_amount: "200",
               posted_amount: "200",
@@ -93,7 +93,7 @@ class ActualExpendituresControllerTest < ActionDispatch::IntegrationTest
             actual_expenditure: {
               transaction_date: "2026-04-25",
               transaction_item: "x",
-              category: ExpenditureTaxonomy::CATEGORIES.first,
+              category: ExpenditureTaxonomy::DEFAULT_CATEGORIES.first,
               payment_method: "現金",
               actual_amount: "10",
               posted_amount: "10"

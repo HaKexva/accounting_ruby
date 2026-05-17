@@ -25,4 +25,7 @@ Rails.application.routes.draw do
   get "revenue_budgets", to: redirect("/budgets")
   get "expenditure_budgets", to: redirect("/budgets")
   get "settings", to: "settings#index", as: :settings
+  post   "settings/taxonomy_items", to: "settings#create_taxonomy_item", as: :settings_taxonomy_items
+  patch  "settings/taxonomy_items/:id", to: "settings#update_taxonomy_item", as: :settings_taxonomy_item
+  delete "settings/taxonomy_items/:id", to: "settings#destroy_taxonomy_item", as: :delete_settings_taxonomy_item
 end

@@ -35,13 +35,16 @@ class DashboardController < ApplicationController
       end
     revenue_total = revenue_scope.sum(:amount)
 
+    taxonomy = ExpenditureTaxonomy.for_user(user)
+
     render Views::Dashboard::Index.new(
       calendar_month: calendar_month,
       month_total: month_total,
       month_count: month_count,
       category_amounts: by_category,
       category_budgets: category_budgets,
-      revenue_total: revenue_total
+      revenue_total: revenue_total,
+      taxonomy: taxonomy
     )
   end
 
@@ -54,6 +57,10 @@ class DashboardController < ApplicationController
       else
         ActualExpenditure.none
       end
-    render Views::Dashboard::History.new(actual_expenditures: expenditures)
+    taxonomy = ExpenditureTaxonomy.for_user(user)
+    render Views::Dashboard::History.new(
+      actual_expenditures: expenditures,
+      taxonomy: taxonomy
+    )
   end
 end

@@ -5,6 +5,7 @@ class Views::Budgets::Index < Views::Base
     revenue_budgets:,
     expenditure_budgets:,
     calendar_month:,
+    taxonomy:,
     initial_budget_kind: :revenue,
     revenue_carousel_initial_index: nil,
     expenditure_carousel_initial_index: nil
@@ -12,6 +13,7 @@ class Views::Budgets::Index < Views::Base
     @revenue_budgets = revenue_budgets
     @expenditure_budgets = expenditure_budgets
     @calendar_month = calendar_month
+    @taxonomy = taxonomy
     @initial_budget_kind = initial_budget_kind
     @revenue_carousel_initial_index = revenue_carousel_initial_index
     @expenditure_carousel_initial_index = expenditure_carousel_initial_index
@@ -555,7 +557,7 @@ class Views::Budgets::Index < Views::Base
       unless has_cat
         NativeSelectOption(value: "", disabled: true, selected: true) { plain "請選擇" }
       end
-      ExpenditureTaxonomy::CATEGORIES.each do |cat|
+      @taxonomy.categories.each do |cat|
         NativeSelectOption(value: cat, selected: has_cat && record.category == cat) { plain cat }
       end
     end

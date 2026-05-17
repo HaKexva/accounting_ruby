@@ -5,7 +5,7 @@ class ActualExpenditure < ApplicationRecord
   NULLIFY_OPTIONAL_STRINGS = %w[credit_card_payment_method payment_timing payment_platform].freeze
 
   before_validation :nullify_blank_optional_strings
-  before_validation :clear_card_only_fields_unless_credit_card
+  before_validation :clear_dependent_fields_unless_applicable
 
   validates :actual_amount, presence: true
   validates :posted_amount, presence: true
@@ -16,6 +16,7 @@ class ActualExpenditure < ApplicationRecord
 
   validate :payment_timing_required_for_credit_card
   validate :credit_card_payment_method_required_for_credit_card
+  validate :payment_platform_required_for_multi_pay
 
   private
 
@@ -26,11 +27,15 @@ class ActualExpenditure < ApplicationRecord
     end
   end
 
-  def clear_card_only_fields_unless_credit_card
-    return if payment_method.to_s.include?("信用卡")
+  def clear_dependent_fields_unless_applicable
+    unless payment_method.to_s.include?("信用卡")
+      self.credit_card_payment_method = nil
+      self.payment_timing = nil
+    end
 
-    self.credit_card_payment_method = nil
-    self.payment_timing = nil
+    return if payment_method.to_s == "多元支付"
+
+    self.payment_platform = nil
   end
 
   def payment_timing_required_for_credit_card
@@ -43,5 +48,11 @@ class ActualExpenditure < ApplicationRecord
     return unless payment_method.to_s.include?("信用卡")
 
     errors.add(:credit_card_payment_method, :blank) if credit_card_payment_method.blank?
+  end
+
+  def payment_platform_required_for_multi_pay
+    return unless payment_method.to_s == "多元支付"
+
+    errors.add(:payment_platform, :blank) if payment_platform.blank?
   end
 end

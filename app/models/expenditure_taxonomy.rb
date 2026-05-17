@@ -1,8 +1,9 @@
 # frozen_string_literal: true
 
-# Reference lists for 實際支出登錄（消費類別、支付相關欄位）.
+# Per-user lists for 實際支出登錄（消費類別、支付方式、支付平台）.
+# Credit-card sub-fields remain fixed reference lists below.
 class ExpenditureTaxonomy
-  CATEGORIES = [
+  DEFAULT_CATEGORIES = [
     "生活花費：食",
     "生活花費：帳單",
     "生活花費：衣與外貌",
@@ -15,13 +16,22 @@ class ExpenditureTaxonomy
     "家人：過年紅包、紀念日"
   ].freeze
 
-  PAYMENT_METHODS = [
+  DEFAULT_PAYMENT_METHODS = [
     "現金",
     "多元支付",
     "玉山轉帳",
     "Linebank轉帳",
     "玉山信用卡",
     "富邦信用卡"
+  ].freeze
+
+  DEFAULT_PAYMENT_PLATFORMS = [
+    "LINE Pay",
+    "LINE Bank",
+    "悠遊付",
+    "髮果",
+    "MOS card",
+    "星巴克隨行卡"
   ].freeze
 
   CREDIT_CARD_PAYMENT_KINDS = [
@@ -34,12 +44,62 @@ class ExpenditureTaxonomy
     "次月支付"
   ].freeze
 
-  PAYMENT_PLATFORMS = [
-    "LINE Pay",
-    "LINE Bank",
-    "悠遊付",
-    "髮果",
-    "MOS card",
-    "星巴克隨行卡"
-  ].freeze
+  DEFAULTS_BY_KIND = {
+    "category" => DEFAULT_CATEGORIES,
+    "payment_method" => DEFAULT_PAYMENT_METHODS,
+    "payment_platform" => DEFAULT_PAYMENT_PLATFORMS
+  }.freeze
+
+  class Catalog
+    def initialize(user)
+      @user = user
+      ExpenditureTaxonomy.ensure_seeded!(@user) if @user
+    end
+
+    def categories
+      names_for("category")
+    end
+
+    def payment_methods
+      names_for("payment_method")
+    end
+
+    def payment_platforms
+      names_for("payment_platform")
+    end
+
+    def names_for(kind)
+      return [] unless @user
+
+      ExpenditureTaxonomyItem.for_kind(kind).where(user: @user).pluck(:name)
+    end
+
+    def items_for(kind)
+      return ExpenditureTaxonomyItem.none unless @user
+
+      ExpenditureTaxonomyItem.for_kind(kind).where(user: @user)
+    end
+  end
+
+  def self.for_user(user)
+    Catalog.new(user)
+  end
+
+  def self.ensure_seeded!(user)
+    return unless user
+    return if ExpenditureTaxonomyItem.where(user: user).exists?
+
+    ExpenditureTaxonomyItem.transaction do
+      DEFAULTS_BY_KIND.each do |kind, names|
+        names.each_with_index do |name, index|
+          ExpenditureTaxonomyItem.create!(
+            user: user,
+            kind: kind,
+            name: name,
+            position: index
+          )
+        end
+      end
+    end
+  end
 end
