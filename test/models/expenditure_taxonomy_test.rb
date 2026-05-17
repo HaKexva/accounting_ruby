@@ -21,4 +21,16 @@ class ExpenditureTaxonomyTest < ActiveSupport::TestCase
     catalog = ExpenditureTaxonomy.for_user(@user)
     assert_equal ExpenditureTaxonomy::DEFAULT_CATEGORIES, catalog.categories
   end
+
+  test "for_user falls back to defaults when taxonomy table is missing" do
+    conn = ActiveRecord::Base.connection
+    conn.execute("ALTER TABLE expenditure_taxonomy_items RENAME TO _taxonomy_missing_test") if conn.table_exists?(:expenditure_taxonomy_items)
+    ExpenditureTaxonomy.instance_variable_set(:@persisted_taxonomy_available, nil)
+
+    catalog = ExpenditureTaxonomy.for_user(@user)
+    assert_equal ExpenditureTaxonomy::DEFAULT_CATEGORIES, catalog.categories
+  ensure
+    ExpenditureTaxonomy.instance_variable_set(:@persisted_taxonomy_available, nil)
+    conn.execute("ALTER TABLE _taxonomy_missing_test RENAME TO expenditure_taxonomy_items") if conn.table_exists?(:_taxonomy_missing_test)
+  end
 end

@@ -1,4 +1,5 @@
 [deploy]
+releaseCommand = "bin/rails db:prepare"
 healthcheckPath = "/up"
 healthcheckTimeout = 100
 restartPolicyType = "on_failure"
