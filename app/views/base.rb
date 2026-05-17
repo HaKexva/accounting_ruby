@@ -19,15 +19,18 @@ class Views::Base < Components::Base
   PAGE_BODY_BELOW_STICKY = "shrink-0 flex flex-col gap-8 pt-8"
 
   # Shared chrome for 實際支出 / 預算 (keep both pages visually aligned).
-  PAGE_TITLE_CLASS = "text-balance text-2xl font-semibold tracking-tight sm:text-3xl"
-  PAGE_NARROW_CLASS = "mx-auto w-full max-w-3xl flex flex-col gap-4 sm:gap-6"
+  PAGE_TITLE_CLASS = "text-balance text-2xl font-semibold tracking-tight text-foreground sm:text-3xl"
+  PAGE_LEAD_CLASS = "max-w-prose text-sm leading-relaxed text-muted-foreground"
+  PAGE_HEADER_BLOCK_CLASS = "flex flex-row items-start justify-between gap-4 shrink-0"
+  PAGE_NARROW_CLASS = "mx-auto w-full max-w-3xl flex flex-col gap-5 sm:gap-6"
 
   MONTH_SUMMARY_SECTION_CLASS = [
-    "flex shrink-0 flex-col rounded-xl border bg-card text-card-foreground shadow-sm ring-1 ring-border/40",
+    "flex shrink-0 flex-col rounded-xl border border-border/80 bg-card text-card-foreground",
+    "shadow-sm shadow-black/[0.04] ring-1 ring-border/50",
     "min-h-0"
   ].join(" ")
-  MONTH_SUMMARY_HEADER_CLASS = "border-b px-4 py-3"
-  MONTH_SUMMARY_TITLE_CLASS = "text-sm font-medium"
+  MONTH_SUMMARY_HEADER_CLASS = "border-b border-border/60 bg-muted/20 px-4 py-3.5 sm:px-5"
+  MONTH_SUMMARY_TITLE_CLASS = "text-sm font-semibold text-foreground"
   MONTH_SUMMARY_PERIOD_CLASS = "text-xs text-muted-foreground tabular-nums"
   MONTH_SUMMARY_BODY_CLASS = "flex flex-col gap-4 p-4 sm:gap-5 sm:p-5"
   MONTH_SUMMARY_STATS_ROW_CLASS = [
@@ -35,11 +38,17 @@ class Views::Base < Components::Base
     "lg:flex-col lg:flex-nowrap lg:items-stretch"
   ].join(" ")
 
-  STAT_CHIP_CLASS = [
-    "flex min-w-0 flex-1 basis-[calc(50%-0.25rem)] flex-col items-center rounded-lg border border-border/50",
-    "bg-muted/25 px-2 py-2 text-center leading-tight sm:basis-auto sm:px-3",
+  STAT_CHIP_BASE_CLASS = [
+    "flex min-w-0 flex-1 basis-[calc(50%-0.25rem)] flex-col items-center rounded-xl border px-2.5 py-2.5",
+    "text-center leading-tight shadow-sm sm:basis-auto sm:px-3.5 sm:py-3",
     "lg:w-full lg:flex-none lg:basis-auto"
   ].join(" ")
+
+  STAT_CHIP_ACCENTS = {
+    budget: "border-chart-2/35 bg-chart-2/10",
+    expense: "border-destructive/30 bg-destructive/[0.06]",
+    remain: "border-emerald-500/35 bg-emerald-500/[0.08]"
+  }.freeze
 
   PAGE_SPLIT_GRID_CLASS = [
     "flex min-h-0 flex-1 flex-col",
@@ -69,8 +78,8 @@ class Views::Base < Components::Base
   STAT_CHIP_META_CLASS = "mt-0.5 text-[10px] tabular-nums text-muted-foreground sm:text-xs"
 
   CHART_PANEL_CLASS = [
-    "mx-auto flex w-full max-w-full shrink-0 flex-col gap-2 rounded-lg border border-border/50 bg-muted/20 p-2",
-    "sm:p-3"
+    "mx-auto flex w-full max-w-full shrink-0 flex-col gap-2 rounded-xl border border-border/60",
+    "bg-gradient-to-b from-muted/30 to-muted/10 p-2.5 sm:p-3.5"
   ].join(" ")
   CHART_CANVAS_WRAP_CLASS = [
     "relative mx-auto aspect-square w-full min-h-[10rem] min-w-0",
@@ -80,9 +89,36 @@ class Views::Base < Components::Base
   PAGE_HEADER_ROW_CLASS = "flex flex-row items-start justify-between gap-4 shrink-0"
 
   CARD_SECTION_CLASS = [
-    "rounded-xl border bg-card text-card-foreground shadow-sm ring-1 ring-border/40",
+    "rounded-xl border border-border/80 bg-card text-card-foreground",
+    "shadow-sm shadow-black/[0.04] ring-1 ring-border/50",
     "shrink-0"
   ].join(" ")
+
+  SEGMENTED_CONTROL_CLASS = "inline-flex w-full max-w-md rounded-lg border border-border/70 bg-muted/50 p-1 shadow-inner sm:w-auto"
+  SEGMENTED_CONTROL_BTN_CLASS = [
+    "flex-1 rounded-md px-3 py-2 text-center text-sm font-medium transition-all",
+    "text-muted-foreground hover:text-foreground",
+    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+  ].join(" ")
+  SEGMENTED_CONTROL_BTN_ACTIVE_CLASS = "bg-card text-foreground shadow-sm ring-1 ring-border/60"
+
+  def page_header(title:, subtitle: nil)
+    div(class: PAGE_HEADER_BLOCK_CLASS) do
+      div(class: "min-w-0 flex-1 space-y-1 pr-2") do
+        h1(class: PAGE_TITLE_CLASS) { title }
+        p(class: PAGE_LEAD_CLASS) { subtitle } if subtitle.present?
+      end
+      if block_given?
+        div(class: "flex shrink-0 items-center gap-2 self-start pt-0.5") { yield }
+      end
+    end
+  end
+
+  def stat_chip_class(accent: nil)
+    accent_key = accent&.to_sym
+    accent_classes = STAT_CHIP_ACCENTS.fetch(accent_key, "border-border/50 bg-muted/30")
+    "#{STAT_CHIP_BASE_CLASS} #{accent_classes}"
+  end
 
   def calendar_month_label_for(calendar_month)
     if calendar_month

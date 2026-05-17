@@ -11,7 +11,10 @@ class Views::Settings::Index < Views::Base
 
   def view_template
     div(class: "#{PAGE_SHELL} space-y-6") do
-      settings_header
+      page_header(
+        title: "設定",
+        subtitle: "管理支出表單使用的消費類別、支付方式與支付平台。"
+      )
 
       if @taxonomy_available
         taxonomy_manager
@@ -26,18 +29,9 @@ class Views::Settings::Index < Views::Base
 
   private
 
-  def settings_header
-    div(class: "space-y-2 pb-2 border-b border-border/60") do
-      h1(class: PAGE_TITLE_CLASS) { "設定" }
-      p(class: "max-w-prose text-sm leading-relaxed text-muted-foreground") do
-        "管理支出表單使用的消費類別、支付方式與支付平台。"
-      end
-    end
-  end
-
   def taxonomy_manager
-    div(class: "w-full", data: { controller: "settings-taxonomy-kind" }) do
-      taxonomy_kind_toolbar
+    div(class: "w-full space-y-5", data: { controller: "settings-taxonomy-kind" }) do
+      taxonomy_kind_switcher
 
       taxonomy_panel(
         kind: "category",
@@ -60,33 +54,48 @@ class Views::Settings::Index < Views::Base
     end
   end
 
-  def taxonomy_kind_toolbar
-    div(class: "flex flex-wrap items-center gap-x-2 gap-y-2 pb-4") do
-      span(class: "text-base font-semibold tracking-tight text-foreground sm:text-lg") { "管理" }
-      div(
-        class: [
-          "min-w-[10rem] max-w-full shrink-0 sm:max-w-[min(16rem,calc(100vw-6rem))]",
-          "[&>div]:w-full sm:[&>div]:w-auto",
-          "[&_select]:min-h-11 [&_select]:py-2 sm:[&_select]:min-h-9 sm:[&_select]:py-1"
-        ].join(" ")
+  def taxonomy_kind_switcher
+    div(class: "space-y-2") do
+      span(class: "text-xs font-medium uppercase tracking-wide text-muted-foreground") { "管理項目" }
+      div(class: SEGMENTED_CONTROL_CLASS, role: "group", aria: { label: "設定類型" }) do
+        ExpenditureTaxonomyItem::KINDS.each do |kind|
+          kind_segment_button(kind)
+        end
+      end
+      NativeSelect(
+        id: "settings_taxonomy_kind_select",
+        class: "sr-only",
+        aria: { label: "設定類型" },
+        data: {
+          settings_taxonomy_kind_target: "kindSelect",
+          action: "change->settings-taxonomy-kind#sync"
+        }
       ) do
-        NativeSelect(
-          id: "settings_taxonomy_kind_select",
-          aria: { label: "設定類型" },
-          data: {
-            settings_taxonomy_kind_target: "kindSelect",
-            action: "change->settings-taxonomy-kind#sync"
-          }
-        ) do
-          ExpenditureTaxonomyItem::KINDS.each do |kind|
-            NativeSelectOption(
-              value: kind,
-              selected: @initial_kind == kind
-            ) { plain ExpenditureTaxonomyItem::KIND_LABELS[kind] }
-          end
+        ExpenditureTaxonomyItem::KINDS.each do |kind|
+          NativeSelectOption(
+            value: kind,
+            selected: @initial_kind == kind
+          ) { plain ExpenditureTaxonomyItem::KIND_LABELS[kind] }
         end
       end
     end
+  end
+
+  def kind_segment_button(kind)
+    active = @initial_kind == kind
+    button(
+      type: "button",
+      class: [
+        SEGMENTED_CONTROL_BTN_CLASS,
+        (active ? SEGMENTED_CONTROL_BTN_ACTIVE_CLASS : nil)
+      ].compact.join(" "),
+      data: {
+        kind_value: kind,
+        settings_taxonomy_kind_target: "kindButton",
+        action: "click->settings-taxonomy-kind#pickKind"
+      },
+      aria: { pressed: active }
+    ) { ExpenditureTaxonomyItem::KIND_LABELS[kind] }
   end
 
   def taxonomy_panel(kind:, target:, items:, hint:)
@@ -96,24 +105,25 @@ class Views::Settings::Index < Views::Base
       data: { settings_taxonomy_kind_target: target }
     ) do
       section(class: CARD_SECTION_CLASS) do
-        div(class: "border-b px-4 py-3 sm:px-5") do
-          h2(class: "text-sm font-medium text-foreground") do
+        div(class: "border-b border-border/60 bg-muted/15 px-4 py-3.5 sm:px-5") do
+          h2(class: "text-sm font-semibold text-foreground") do
             plain ExpenditureTaxonomyItem::KIND_LABELS[kind]
           end
           p(class: "mt-1 text-xs leading-relaxed text-muted-foreground") { hint }
         end
 
-        div(class: "divide-y divide-border/60") do
+        div(class: "divide-y divide-border/50") do
           if items.empty?
-            p(class: "px-4 py-6 text-center text-sm text-muted-foreground sm:px-5") do
-              "尚無項目，請在下方新增。"
+            div(class: "px-4 py-10 text-center sm:px-5") do
+              p(class: "text-sm font-medium text-foreground") { "尚無項目" }
+              p(class: "mt-1 text-xs text-muted-foreground") { "請在下方新增第一筆。" }
             end
           else
             items.each { |item| taxonomy_item_row(item) }
           end
         end
 
-        div(class: "border-t border-border/60 bg-muted/15 px-4 py-4 sm:px-5") do
+        div(class: "border-t border-border/60 bg-muted/10 px-4 py-4 sm:px-5") do
           taxonomy_add_form(kind: kind)
         end
       end
@@ -127,9 +137,14 @@ class Views::Settings::Index < Views::Base
   ].join(" ").freeze
 
   def taxonomy_item_row(item)
-    div(class: "flex items-center gap-1.5 px-4 py-3 sm:gap-3 sm:px-5") do
+    div(
+      class: [
+        "flex items-center gap-2 px-4 py-3 transition-colors sm:gap-3 sm:px-5",
+        "hover:bg-muted/25"
+      ].join(" ")
+    ) do
       form(
-        class: "flex min-w-0 flex-1 items-center gap-1.5 sm:gap-3",
+        class: "flex min-w-0 flex-1 items-center gap-2 sm:gap-3",
         action: settings_taxonomy_item_path(item),
         method: "post",
         data: {

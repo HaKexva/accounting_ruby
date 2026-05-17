@@ -25,7 +25,7 @@ class DashboardControllerTest < ActionDispatch::IntegrationTest
       assert_response :success
       assert_includes response.body, "本月消費支出結構"
       assert_includes response.body, "預算收入－預算支出"
-      assert_includes response.body, "尚未使用的預算支出"
+      assert_includes response.body, "尚未使用預算"
       assert_includes response.body, "data-expenditure-month-chart-budgets-value"
       assert_includes response.body, "data-expenditure-month-chart-revenue-total-value"
       assert_includes response.body, "data-expenditure-month-chart-category-order-value"
