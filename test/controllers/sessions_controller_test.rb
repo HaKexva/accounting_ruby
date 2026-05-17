@@ -26,5 +26,4 @@ class SessionsControllerTest < ActionDispatch::IntegrationTest
     delete logout_path
     assert_redirected_to login_path
   end
-
 end
