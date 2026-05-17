@@ -99,9 +99,9 @@ class Views::Base < Components::Base
     "bg-muted/50 p-1 shadow-inner sm:w-auto"
   ].join(" ")
   SEGMENTED_CONTROL_INDICATOR_CLASS = [
-    "pointer-events-none absolute inset-y-1 left-1 z-0 rounded-md",
-    "bg-card shadow-sm ring-1 ring-border/60",
-    "transition-[transform,width] duration-200 ease-out will-change-transform"
+    "pointer-events-none absolute top-1 bottom-1 left-0 z-0 rounded-md",
+    "bg-card shadow-sm ring-1 ring-border/60 opacity-0",
+    "transition-[left,width,translate,opacity] duration-200 ease-out"
   ].join(" ")
   SEGMENTED_CONTROL_BTN_CLASS = [
     "relative z-10 flex-1 rounded-md px-3 py-2 text-center text-sm font-medium",

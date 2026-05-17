@@ -8,7 +8,9 @@ export default class extends Controller {
     this._onResize = () => this.#positionIndicator();
     window.addEventListener("resize", this._onResize);
     this.sync();
-    requestAnimationFrame(() => this.#positionIndicator());
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => this.#positionIndicator());
+    });
   }
 
   disconnect() {
@@ -58,7 +60,8 @@ export default class extends Controller {
     const left = buttonRect.left - trackRect.left;
 
     this.indicatorTarget.style.width = `${buttonRect.width}px`;
-    this.indicatorTarget.style.transform = `translateX(${left}px)`;
+    this.indicatorTarget.style.left = `${left}px`;
+    this.indicatorTarget.style.translate = "none";
     this.indicatorTarget.style.opacity = "1";
   }
 
