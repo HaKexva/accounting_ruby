@@ -38,7 +38,16 @@ module Authentication
     session.delete(:return_to_after_login).presence || root_path
   end
 
+  def localhost_request?
+    request.present? && LocalHostAccess.localhost_host?(request.host)
+  end
+
+  # Development or browser on localhost: no login screen, automatic trial user.
+  def skip_login_page?
+    !Rails.env.test? && (Rails.env.local? || localhost_request?)
+  end
+
   def allow_anonymous_trial?
-    Rails.env.test? || Rails.env.local?
+    Rails.env.test? || skip_login_page?
   end
 end

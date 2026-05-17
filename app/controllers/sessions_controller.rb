@@ -5,7 +5,7 @@ class SessionsController < ApplicationController
   layout "sessions"
 
   def new
-    redirect_to after_login_path if signed_in?
+    redirect_to after_login_path if signed_in? || skip_login_page?
 
     @google_oauth_enabled = GoogleOauth.configured?
     @trial_login_enabled = allow_anonymous_trial?
@@ -25,6 +25,7 @@ class SessionsController < ApplicationController
 
   def destroy
     reset_session
-    redirect_to login_path, notice: "已登出。"
+    destination = skip_login_page? ? root_path : login_path
+    redirect_to destination, notice: "已登出。"
   end
 end
