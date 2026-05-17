@@ -57,7 +57,17 @@ class Views::Settings::Index < Views::Base
   def taxonomy_kind_switcher
     div(class: "space-y-2") do
       span(class: "text-xs font-medium uppercase tracking-wide text-muted-foreground") { "管理項目" }
-      div(class: SEGMENTED_CONTROL_CLASS, role: "group", aria: { label: "設定類型" }) do
+      div(
+        class: SEGMENTED_CONTROL_CLASS,
+        role: "group",
+        aria: { label: "設定類型" },
+        data: { settings_taxonomy_kind_target: "track" }
+      ) do
+        span(
+          class: SEGMENTED_CONTROL_INDICATOR_CLASS,
+          data: { settings_taxonomy_kind_target: "indicator" },
+          aria: { hidden: true }
+        )
         ExpenditureTaxonomyItem::KINDS.each do |kind|
           kind_segment_button(kind)
         end

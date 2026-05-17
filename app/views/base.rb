@@ -94,13 +94,22 @@ class Views::Base < Components::Base
     "shrink-0"
   ].join(" ")
 
-  SEGMENTED_CONTROL_CLASS = "inline-flex w-full max-w-md rounded-lg border border-border/70 bg-muted/50 p-1 shadow-inner sm:w-auto"
-  SEGMENTED_CONTROL_BTN_CLASS = [
-    "flex-1 rounded-md px-3 py-2 text-center text-sm font-medium transition-all",
-    "text-muted-foreground hover:text-foreground",
-    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+  SEGMENTED_CONTROL_CLASS = [
+    "relative inline-flex w-full max-w-md rounded-lg border border-border/70",
+    "bg-muted/50 p-1 shadow-inner sm:w-auto"
   ].join(" ")
-  SEGMENTED_CONTROL_BTN_ACTIVE_CLASS = "bg-card text-foreground shadow-sm ring-1 ring-border/60"
+  SEGMENTED_CONTROL_INDICATOR_CLASS = [
+    "pointer-events-none absolute inset-y-1 left-1 z-0 rounded-md",
+    "bg-card shadow-sm ring-1 ring-border/60",
+    "transition-[transform,width] duration-200 ease-out will-change-transform"
+  ].join(" ")
+  SEGMENTED_CONTROL_BTN_CLASS = [
+    "relative z-10 flex-1 rounded-md px-3 py-2 text-center text-sm font-medium",
+    "transition-colors text-muted-foreground hover:text-foreground",
+    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+    "focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+  ].join(" ")
+  SEGMENTED_CONTROL_BTN_ACTIVE_CLASS = "text-foreground"
 
   def page_header(title:, subtitle: nil)
     div(class: PAGE_HEADER_BLOCK_CLASS) do
