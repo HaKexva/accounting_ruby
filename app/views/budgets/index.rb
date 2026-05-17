@@ -40,7 +40,9 @@ class Views::Budgets::Index < Views::Base
           div(class: PAGE_SPLIT_RIGHT_BODY_CLASS) do
             budget_main_editor_section_intro
 
-            div(class: "w-full", data: { controller: "budgets-kind" }) do
+            div(class: "w-full space-y-4", data: { controller: "budgets-kind" }) do
+              budget_kind_switcher
+
               div(
                 class: (@initial_budget_kind == :expenditure) ? "hidden" : nil,
                 data: { budgets_kind_target: "revenuePanel" }
@@ -81,7 +83,6 @@ class Views::Budgets::Index < Views::Base
   def revenue_budget_deck
     slides = budget_slides_with_trailing_new(@revenue_budgets)
     budget_deck_wrapper do
-      budget_kind_toolbar(select_suffix: "revenue_deck")
       Carousel(
         tabindex: "0",
         initial_index: @revenue_carousel_initial_index,
@@ -111,7 +112,6 @@ class Views::Budgets::Index < Views::Base
   def expenditure_budget_deck
     slides = budget_slides_with_trailing_new(@expenditure_budgets)
     budget_deck_wrapper do
-      budget_kind_toolbar(select_suffix: "expenditure_deck")
       Carousel(
         tabindex: "0",
         initial_index: @expenditure_carousel_initial_index,
@@ -160,19 +160,18 @@ class Views::Budgets::Index < Views::Base
     end
   end
 
-  def budget_kind_toolbar(select_suffix:)
-    div(class: "flex flex-wrap items-center gap-x-2 gap-y-2 border-b border-border px-3 py-2.5 sm:px-4 sm:py-3") do
+  def budget_kind_switcher
+    div(class: "flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4") do
       span(class: "text-base font-semibold tracking-tight text-foreground sm:text-lg") { "新增" }
-      div(
-        class: [
-          "min-w-[10rem] max-w-full shrink-0 sm:max-w-[min(14rem,calc(100vw-6rem))]",
-          "[&>div]:w-full sm:[&>div]:w-auto",
-          "[&_select]:min-h-11 [&_select]:py-2 sm:[&_select]:min-h-9 sm:[&_select]:py-1"
-        ].join(" ")
-      ) do
+      div(class: "min-w-0 flex-1 sm:max-w-md") do
+        div(class: "#{SEGMENTED_CONTROL_CLASS} w-full", role: "group", aria: { label: "預算類型" }) do
+          budget_kind_segment_button(:revenue, "收入預算")
+          budget_kind_segment_button(:expenditure, "支出預算")
+        end
         NativeSelect(
-          id: "budget_kind_select_#{select_suffix}",
-          aria: { label: "預算類型：收入或支出（與「新增」同一列）" },
+          id: "budget_kind_select",
+          class: "sr-only",
+          aria: { label: "預算類型" },
           data: {
             budgets_kind_target: "kindSelect",
             action: "change->budgets-kind#sync"
@@ -185,13 +184,28 @@ class Views::Budgets::Index < Views::Base
     end
   end
 
+  def budget_kind_segment_button(kind, label)
+    active = @initial_budget_kind == kind
+    button(
+      type: "button",
+      class: [
+        SEGMENTED_CONTROL_BTN_CLASS,
+        (active ? SEGMENTED_CONTROL_BTN_ACTIVE_CLASS : nil)
+      ].compact.join(" "),
+      data: {
+        kind_value: kind.to_s,
+        budgets_kind_target: "kindButton",
+        action: "click->budgets-kind#pickKind"
+      },
+      aria: { pressed: active }
+    ) { label }
+  end
+
   def budget_header_row
-    div(class: "flex flex-row items-start justify-between gap-3 shrink-0") do
-      div(class: "min-w-0 flex-1 pr-2") do
-        h1(class: PAGE_TITLE_CLASS) { "預算" }
-      end
-      div(class: "flex shrink-0 pt-0.5") { }
-    end
+    page_header(
+      title: "預算",
+      subtitle: "規劃本月收入與各類別支出預算"
+    )
   end
 
   def budget_month_summary_panel
@@ -624,7 +638,11 @@ class Views::Budgets::Index < Views::Base
   def budget_summary_stat(label:, total:, count:, kind:)
     total_target = kind == :revenue ? "revenueTotal" : "expenditureTotal"
     count_target = kind == :revenue ? "revenueCount" : "expenditureCount"
-    div(class: "#{STAT_CHIP_CLASS} basis-[calc(33.333%-0.35rem)] sm:basis-auto", title: label) do
+    accent = kind == :revenue ? :remain : :expense
+    div(
+      class: "#{stat_chip_class(accent: accent)} basis-[calc(33.333%-0.35rem)] sm:basis-auto",
+      title: label
+    ) do
       p(class: STAT_CHIP_LABEL_CLASS) { label }
       p(class: STAT_CHIP_VALUE_CLASS, data: { budget_live_totals_target: total_target }) { "NT$#{format_decimal(total)}" }
       p(class: STAT_CHIP_META_CLASS, data: { budget_live_totals_target: count_target }) { "#{count} 筆" }
@@ -632,7 +650,10 @@ class Views::Budgets::Index < Views::Base
   end
 
   def budget_summary_net_stat(total:)
-    div(class: "#{STAT_CHIP_CLASS} basis-[calc(33.333%-0.35rem)] sm:basis-auto", title: "相減（收入−支出）") do
+    div(
+      class: "#{stat_chip_class(accent: :budget)} basis-[calc(33.333%-0.35rem)] sm:basis-auto",
+      title: "相減（收入−支出）"
+    ) do
       p(class: STAT_CHIP_LABEL_CLASS) { "淨額" }
       p(class: STAT_CHIP_VALUE_CLASS, data: { budget_live_totals_target: "netTotal" }) { "NT$#{format_decimal(total)}" }
     end

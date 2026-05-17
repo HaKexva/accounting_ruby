@@ -32,19 +32,25 @@ class Views::Dashboard::History < Views::Base
   private
 
   def history_header
-    div(class: PAGE_HEADER_ROW_CLASS) do
-      div(class: "min-w-0 flex-1 pr-2") do
-        h1(class: PAGE_TITLE_CLASS) { "歷史紀錄" }
-      end
-      div(class: "flex shrink-0 pt-0.5") do
-        Link(href: root_path, variant: :outline, size: :md) { "返回實際支出" }
-      end
+    page_header(title: "歷史紀錄", subtitle: "瀏覽、編輯或刪除過去的支出") do
+      Link(href: root_path, variant: :outline, size: :md) { "返回實際支出" }
     end
   end
 
   def empty_state
     section(class: "#{CARD_SECTION_CLASS} overflow-hidden", aria: { label: "實際支出列表" }) do
-      p(class: "py-10 text-center text-sm text-muted-foreground") { "尚無歷史紀錄" }
+      div(class: "flex flex-col items-center px-6 py-14 text-center sm:py-16") do
+        div(class: "mb-4 flex size-14 items-center justify-center rounded-full bg-muted/60 text-muted-foreground") do
+          empty_icon
+        end
+        p(class: "text-base font-semibold text-foreground") { "尚無歷史紀錄" }
+        p(class: "mt-2 max-w-sm text-sm text-muted-foreground") do
+          "在實際支出頁登錄第一筆支出後，會顯示在這裡。"
+        end
+        div(class: "mt-6") do
+          Link(href: root_path, variant: :primary, size: :md) { "前往登錄支出" }
+        end
+      end
     end
   end
 
@@ -73,8 +79,8 @@ class Views::Dashboard::History < Views::Base
     ) do
       div(
         class: [
-          "flex items-center justify-between gap-3 px-4 py-3 sm:px-5",
-          "transition-colors hover:bg-muted/40"
+          "flex items-center justify-between gap-3 px-4 py-3.5 sm:px-5",
+          "transition-colors hover:bg-muted/30"
         ].join(" ")
       ) do
         div(
@@ -106,19 +112,40 @@ class Views::Dashboard::History < Views::Base
   end
 
   def history_list_item_body(expenditure)
-    p(class: "text-sm text-muted-foreground tabular-nums") do
+    p(class: "text-xs font-medium uppercase tracking-wide text-muted-foreground tabular-nums") do
       expenditure.transaction_date.strftime("%Y-%m-%d")
     end
-    p(class: "text-base font-medium text-foreground truncate") do
+    p(class: "mt-1 text-base font-semibold text-foreground truncate") do
       item_title(expenditure)
     end
     if expenditure.category.present?
-      p(class: "text-sm text-muted-foreground truncate") do
-        plain "類別：#{expenditure.category}"
-      end
+      span(
+        class: [
+          "mt-2 inline-block max-w-full truncate rounded-md border border-border/60",
+          "bg-muted/40 px-2 py-0.5 text-xs text-muted-foreground"
+        ].join(" ")
+      ) { expenditure.category }
     end
-    p(class: "text-sm font-medium tabular-nums text-destructive") do
-      plain "金額：#{format_decimal(expenditure.posted_amount)}"
+    p(class: "mt-2 text-sm font-semibold tabular-nums text-destructive") do
+      plain "NT$ #{format_decimal(expenditure.posted_amount)}"
+    end
+  end
+
+  def empty_icon
+    svg(
+      xmlns: "http://www.w3.org/2000/svg",
+      width: "28",
+      height: "28",
+      viewBox: "0 0 24 24",
+      fill: "none",
+      stroke: "currentColor",
+      stroke_width: "1.5",
+      stroke_linecap: "round",
+      stroke_linejoin: "round",
+      aria: { hidden: true }
+    ) do |s|
+      s.path(d: "M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8")
+      s.path(d: "M3 3v5h5")
     end
   end
 

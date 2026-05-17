@@ -91,13 +91,8 @@ class Views::Dashboard::Index < Views::Base
   end
 
   def header_row
-    div(class: PAGE_HEADER_ROW_CLASS) do
-      div(class: "min-w-0 flex-1 pr-2") do
-        h1(class: PAGE_TITLE_CLASS) { "實際支出" }
-      end
-      div(class: "flex shrink-0 pt-0.5") do
-        Link(href: expense_history_path, variant: :outline, size: :md) { "歷史紀錄" }
-      end
+    page_header(title: "實際支出", subtitle: "登錄本月支出並即時查看預算餘額") do
+      Link(href: expense_history_path, variant: :outline, size: :md) { "歷史紀錄" }
     end
   end
 
@@ -126,24 +121,27 @@ class Views::Dashboard::Index < Views::Base
           category_summary_chip(
             label: "預算",
             target: "budgetAmount",
-            initial: "NT$0"
+            initial: "NT$0",
+            accent: :budget
           )
           category_summary_chip(
             label: "支出",
             target: "expenseAmount",
-            initial: "NT$0"
+            initial: "NT$0",
+            accent: :expense
           )
           category_summary_chip(
             label: "餘額",
             target: "remainAmount",
             label_target: "remainLabel",
-            initial: "NT$0"
+            initial: "NT$0",
+            accent: :remain
           )
         end
         div(class: CHART_PANEL_CLASS) do
           p(class: "shrink-0 text-center text-xs font-medium text-foreground") { "本月消費支出結構" }
           p(class: "shrink-0 text-center text-[11px] leading-snug text-muted-foreground sm:text-xs") do
-            plain "各類別：淺色為尚未使用的預算支出、深色為已使用；另含預算收入－預算支出（占比以收入預算合計為分母）"
+            plain "各類別同色：淺色＝尚未使用預算、深色＝已使用；另含預算收入－預算支出（占比以收入預算合計為分母）"
           end
           div(class: "flex w-full shrink justify-center py-1") do
             div(class: CHART_CANVAS_WRAP_CLASS) do
@@ -165,8 +163,8 @@ class Views::Dashboard::Index < Views::Base
     end
   end
 
-  def category_summary_chip(label:, target:, initial:, label_target: nil)
-    div(class: STAT_CHIP_CLASS) do
+  def category_summary_chip(label:, target:, initial:, label_target: nil, accent: nil)
+    div(class: stat_chip_class(accent: accent)) do
       p(
         class: STAT_CHIP_LABEL_CLASS,
         data: (label_target ? { expenditure_live_category_summary_target: label_target } : {})
@@ -180,8 +178,9 @@ class Views::Dashboard::Index < Views::Base
 
   def form_panel
     section(class: "#{CARD_SECTION_CLASS} lg:h-fit", aria: { label: "支出登錄表單" }) do
-      div(class: "hidden border-b px-4 py-3 lg:block") do
+      div(class: "hidden border-b border-border/60 bg-muted/15 px-4 py-3.5 lg:block sm:px-5") do
         h2(class: MONTH_SUMMARY_TITLE_CLASS) { "登錄支出" }
+        p(class: "mt-0.5 text-xs text-muted-foreground") { "填寫後即時更新左側摘要" }
       end
       div(class: "flex flex-col gap-6 p-5 sm:p-6") do
         expenditure_entry_context_row

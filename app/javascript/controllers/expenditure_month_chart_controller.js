@@ -297,9 +297,10 @@ export default class extends Controller {
   #colorsForCategory(category, unknownCategories) {
     const colorIdx = this.#categoryColorIndex(category, unknownCategories);
     const chartVar = CHART_CSS_VARS[colorIdx % CHART_CSS_VARS.length];
+    const base = this.#cssColor(chartVar);
     return {
-      darkColor: this.#cssColor(chartVar),
-      lightColor: this.#lightSliceColor(chartVar),
+      darkColor: this.#usedSliceColor(base),
+      lightColor: this.#unusedSliceColor(base),
     };
   }
 
@@ -354,6 +355,9 @@ export default class extends Controller {
     const wrap = document.createElement("div");
     wrap.className = "flex w-full flex-col gap-2";
     wrap.setAttribute("role", "list");
+
+    const roleKey = this.#roleLegendKey();
+    if (roleKey) wrap.appendChild(roleKey);
 
     rows.forEach((row) => {
       const el = document.createElement("div");
@@ -442,13 +446,50 @@ export default class extends Controller {
     return `NT$${v.toLocaleString("zh-TW")}`;
   }
 
-  #lightSliceColor(chartVar) {
-    const base = this.#cssColor(chartVar);
-    const muted = this.#cssColor("--muted");
-    if (typeof CSS !== "undefined" && CSS.supports("color", "color-mix(in oklch, red, blue)")) {
-      return `color-mix(in oklch, ${base} 32%, ${muted} 68%)`;
+  /** 尚未使用：同色系淺色（與背景混合，保留色相）。 */
+  #unusedSliceColor(base) {
+    const surface = this.#cssColor("--card");
+    return this.#colorMix(base, surface, 28);
+  }
+
+  /** 已使用：同色系深色（飽和原色，與淺色區塊對比）。 */
+  #usedSliceColor(base) {
+    return this.#colorMix(base, base, 100);
+  }
+
+  #colorMix(colorA, colorB, percentA) {
+    if (
+      typeof CSS !== "undefined" &&
+      CSS.supports("color", "color-mix(in oklch, red, blue)")
+    ) {
+      const b = 100 - percentA;
+      return `color-mix(in oklch, ${colorA} ${percentA}%, ${colorB} ${b}%)`;
     }
-    return muted;
+    return colorA;
+  }
+
+  #roleLegendKey() {
+    const sample = this.#cssColor("--chart-2");
+    const unused = this.#unusedSliceColor(sample);
+    const used = this.#usedSliceColor(sample);
+
+    const key = document.createElement("div");
+    key.className =
+      "mb-1 flex flex-wrap items-center justify-center gap-x-4 gap-y-1 border-b border-border/40 pb-2 text-[10px] text-muted-foreground sm:text-[11px]";
+    key.setAttribute("aria-hidden", "true");
+
+    [ ["尚未使用", unused], ["已使用", used] ].forEach(([label, bg]) => {
+      const item = document.createElement("span");
+      item.className = "inline-flex items-center gap-1.5";
+      const sw = document.createElement("span");
+      sw.className = "h-2.5 w-3 shrink-0 rounded-sm ring-1 ring-border/50";
+      sw.style.backgroundColor = bg;
+      item.appendChild(sw);
+      item.appendChild(document.createTextNode(label));
+      key.appendChild(item);
+    });
+
+    return key;
   }
 
   #cssColor(varName) {
