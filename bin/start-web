@@ -8,6 +8,11 @@ set -e
 # Railway/Procfile uses this script (not bare `rails server`), so migrate here — see bin/docker-entrypoint.
 ./bin/rails db:prepare
 
+# Nixpacks/Railway may skip Docker asset precompile; Propshaft needs public/assets/*.css.
+if [ ! -f public/assets/.manifest.json ]; then
+  SECRET_KEY_BASE_DUMMY=1 ./bin/rails assets:precompile
+fi
+
 export HTTP_PORT="${PORT:-8080}"
 export TARGET_PORT="${TARGET_PORT:-3000}"
 if [ "$HTTP_PORT" = "$TARGET_PORT" ]; then
