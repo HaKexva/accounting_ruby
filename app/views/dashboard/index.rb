@@ -11,7 +11,8 @@ class Views::Dashboard::Index < Views::Base
     month_count:,
     category_amounts:,
     category_budgets:,
-    revenue_total:
+    revenue_total:,
+    taxonomy:
   )
     @calendar_month = calendar_month
     @month_total = month_total
@@ -19,6 +20,7 @@ class Views::Dashboard::Index < Views::Base
     @category_amounts = category_amounts
     @category_budgets = category_budgets
     @revenue_total = revenue_total
+    @taxonomy = taxonomy
   end
 
   def view_template
@@ -35,7 +37,7 @@ class Views::Dashboard::Index < Views::Base
         expenditure_month_chart_categories_value: chart_categories_json,
         expenditure_month_chart_budgets_value: category_budgets_json,
         expenditure_month_chart_revenue_total_value: @revenue_total.to_f,
-        expenditure_month_chart_category_order_value: ExpenditureTaxonomy::CATEGORIES.to_json,
+        expenditure_month_chart_category_order_value: @taxonomy.categories.to_json,
         expenditure_live_category_summary_budgets_value: category_budgets_json,
         expenditure_live_category_summary_spent_value: chart_categories_json,
         action: [
@@ -228,7 +230,7 @@ class Views::Dashboard::Index < Views::Base
             label: "消費類別：",
             id: "actual_expenditure_category",
             name: "actual_expenditure[category]",
-            options: ExpenditureTaxonomy::CATEGORIES,
+            options: @taxonomy.categories,
             required: true,
             prompt: "請選擇",
             form: ACTUAL_EXPENDITURE_FORM_ID,
@@ -247,7 +249,7 @@ class Views::Dashboard::Index < Views::Base
             label: "支付方式：",
             id: "actual_expenditure_payment_method",
             name: "actual_expenditure[payment_method]",
-            options: ExpenditureTaxonomy::PAYMENT_METHODS,
+            options: @taxonomy.payment_methods,
             required: true,
             prompt: "請選擇",
             form: ACTUAL_EXPENDITURE_FORM_ID,
@@ -302,10 +304,11 @@ class Views::Dashboard::Index < Views::Base
               label: "支付平台：",
               id: "actual_expenditure_payment_platform",
               name: "actual_expenditure[payment_platform]",
-              options: ExpenditureTaxonomy::PAYMENT_PLATFORMS,
-              include_blank: true,
+              options: @taxonomy.payment_platforms,
+              prompt: "請選擇",
               form: ACTUAL_EXPENDITURE_FORM_ID,
               native_select: {
+                disabled: true,
                 data: { expenditure_form_target: "paymentPlatform" }
               }
             )

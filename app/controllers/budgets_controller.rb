@@ -9,8 +9,11 @@ class BudgetsController < ApplicationController
   ]
 
   def index
+    user = trial_account_owner
     revenue_budgets, expenditure_budgets, calendar_month = budget_index_state
     focus = carousel_focus_from_params(revenue_budgets, expenditure_budgets)
+
+    taxonomy = ExpenditureTaxonomy.for_user(user)
 
     render Views::Budgets::Index.new(
       revenue_budgets: revenue_budgets,
@@ -18,7 +21,8 @@ class BudgetsController < ApplicationController
       calendar_month: calendar_month,
       initial_budget_kind: focus.fetch(:kind),
       revenue_carousel_initial_index: focus[:revenue_index],
-      expenditure_carousel_initial_index: focus[:expenditure_index]
+      expenditure_carousel_initial_index: focus[:expenditure_index],
+      taxonomy: taxonomy
     )
   end
 

@@ -19,4 +19,21 @@ class ActualExpenditureTest < ActiveSupport::TestCase
 
     assert record.valid?
   end
+
+  test "payment platform required when payment method is multi-pay" do
+    record = actual_expenditures(:one)
+    record.payment_method = "多元支付"
+    record.payment_platform = nil
+
+    assert_not record.valid?
+    assert_includes record.errors[:payment_platform], "can't be blank"
+  end
+
+  test "payment platform not required for cash" do
+    record = actual_expenditures(:one)
+    record.payment_method = "現金"
+    record.payment_platform = nil
+
+    assert record.valid?
+  end
 end
