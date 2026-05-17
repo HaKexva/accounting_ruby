@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_05_02_051425) do
+ActiveRecord::Schema[8.1].define(version: 2026_05_16_120001) do
   create_table "actual_expenditures", force: :cascade do |t|
     t.decimal "actual_amount", null: false
     t.integer "calendar_month_id", null: false
@@ -35,10 +35,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_02_051425) do
     t.datetime "created_at", null: false
     t.integer "month", null: false
     t.datetime "updated_at", null: false
-    t.integer "user_id", null: false
     t.integer "year", null: false
-    t.index ["user_id", "year", "month"], name: "index_calendar_months_on_user_id_and_year_and_month", unique: true
-    t.index ["user_id"], name: "index_calendar_months_on_user_id"
+    t.index ["year", "month"], name: "index_calendar_months_on_year_and_month", unique: true
   end
 
   create_table "expenditure_budgets", force: :cascade do |t|

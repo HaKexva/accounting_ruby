@@ -8,6 +8,8 @@ class ActualExpenditure < ApplicationRecord
   before_validation :clear_card_only_fields_unless_credit_card
 
   validates :actual_amount, presence: true
+  validates :posted_amount, presence: true
+  validates :payment_method, presence: true
   validates :category, presence: true
   validates :transaction_item, presence: true
   validates :transaction_date, presence: true

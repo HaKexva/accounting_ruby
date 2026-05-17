@@ -10,11 +10,12 @@ const CHART_CSS_VARS = [
   "--chart-5",
 ];
 
-/** Doughnut: 支出預算依「類別」加總占比（多張卡片即時合併），隨類別／金額欄位更新。 */
+/** Doughnut: 支出依「類別」加總 + 未使用收入（收入合計 − 支出合計），與表單即時連動。 */
 export default class extends Controller {
   static targets = ["canvas", "chartLegend"];
 
   connect() {
+    this._percentBase = 1;
     this._recalc = () => this.recalc();
     this.element.addEventListener("input", this._recalc);
     this.element.addEventListener("change", this._recalc);
@@ -55,6 +56,16 @@ export default class extends Controller {
   }
 
   initChart() {
+    // Chart.js v4 wraps `chart.options` in Proxies. Do not assign whole branches
+    // like `chart.options.plugins = {}` after construction — that can recurse
+    // between resolver proxies (helpers.config) and blow the stack.
+    Chart.defaults.color = this.#cssColor("--muted-foreground");
+    const tooltipTheme = {
+      backgroundColor: this.#cssColor("--card"),
+      borderColor: this.#cssColor("--border"),
+      titleColor: this.#cssColor("--foreground"),
+      bodyColor: this.#cssColor("--muted-foreground"),
+    };
     const ctx = this.canvasTarget.getContext("2d");
     this._chart = new Chart(ctx, {
       type: "doughnut",
@@ -79,14 +90,13 @@ export default class extends Controller {
             display: false,
           },
           tooltip: {
+            ...tooltipTheme,
             callbacks: {
               label: (ctx) => {
-                if (ctx.label === "尚無支出預算資料") return ` ${ctx.label}`;
-                const dataset = ctx.dataset.data;
-                const total = dataset.reduce((a, b) => a + Number(b), 0);
+                if (ctx.label === "尚無預算資料") return ` ${ctx.label}`;
                 const v = Number(ctx.raw) || 0;
-                const pct =
-                  total > 0 ? Math.min(100, Math.round((v / total) * 100)) : 0;
+                const base = this._percentBase > 0 ? this._percentBase : 1;
+                const pct = Math.min(100, Math.round((v / base) * 100));
                 return ` ${ctx.label}: NT$${this.#formatTwd(v)}（${pct}%）`;
               },
             },
@@ -94,29 +104,48 @@ export default class extends Controller {
         },
       },
     });
-    this.#applyChartTheme();
   }
 
   recalc() {
     if (!this._chart) return;
 
-    const pairs = this.#expenditureTotalsByCategory();
+    const revenue = this.#revenueTotal();
+    const expPairs = this.#expenditureTotalsByCategory();
+    const expTotal = expPairs.reduce((s, [, a]) => s + a, 0);
+    const unused = Math.max(0, revenue - expTotal);
+
+    const series = [ ...expPairs ];
+    if (unused > 0) {
+      series.push([ "未使用收入", unused ]);
+    }
+
+    const sliceSum = series.reduce((s, [, a]) => s + a, 0);
+    this._percentBase = revenue > 0 ? revenue : (sliceSum > 0 ? sliceSum : 1);
+
     const ds = this._chart.data.datasets[0];
 
-    if (pairs.length === 0) {
-      this._chart.data.labels = ["尚無支出預算資料"];
-      ds.data = [1];
-      ds.backgroundColor = [this.#cssColor("--muted")];
+    if (series.length === 0) {
+      this._chart.data.labels = [ "尚無預算資料" ];
+      ds.data = [ 1 ];
+      ds.backgroundColor = [ this.#cssColor("--muted") ];
     } else {
-      this._chart.data.labels = pairs.map(([label]) => label);
-      ds.data = pairs.map(([, amount]) => amount);
-      ds.backgroundColor = pairs.map((_, i) =>
-        this.#cssColor(CHART_CSS_VARS[i % CHART_CSS_VARS.length])
-      );
+      this._chart.data.labels = series.map(([label]) => label);
+      ds.data = series.map(([, amount]) => amount);
+      let colorIdx = 0;
+      ds.backgroundColor = series.map(([label]) => {
+        if (label === "未使用收入") {
+          return this.#cssColor("--muted");
+        }
+        const c = this.#cssColor(
+          CHART_CSS_VARS[colorIdx % CHART_CSS_VARS.length]
+        );
+        colorIdx += 1;
+        return c;
+      });
     }
 
     this._chart.update();
-    this.#syncHtmlLegend(pairs);
+    this.#syncHtmlLegend(series);
     this.#resizeChart();
   }
 
@@ -129,16 +158,21 @@ export default class extends Controller {
     if (pairs.length === 0) {
       const p = document.createElement("p");
       p.className = "text-center text-[11px] leading-snug text-muted-foreground";
-      p.textContent = "尚無可畫分資料 · 請於下方「支出預算」填寫金額與類別";
+      p.textContent =
+        "尚無可畫分資料 · 請於下方填寫「收入預算」或「支出預算」金額（支出請選類別）";
       root.appendChild(p);
       return;
     }
+
+    const base =
+      this._percentBase > 0 ? this._percentBase : 1;
 
     const wrap = document.createElement("div");
     wrap.className =
       "flex flex-wrap justify-center gap-x-3 gap-y-0.5 px-0.5 sm:gap-x-4";
     wrap.setAttribute("role", "list");
 
+    let colorIdx = 0;
     pairs.forEach(([label, amount], i) => {
       const row = document.createElement("div");
       row.setAttribute("role", "listitem");
@@ -154,15 +188,18 @@ export default class extends Controller {
       dot.className =
         "h-2 w-2 shrink-0 rounded-sm ring-1 ring-border/50";
       dot.setAttribute("aria-hidden", "true");
-      dot.style.backgroundColor = this.#cssColor(
-        CHART_CSS_VARS[i % CHART_CSS_VARS.length]
-      );
+      if (label === "未使用收入") {
+        dot.style.backgroundColor = this.#cssColor("--muted");
+      } else {
+        dot.style.backgroundColor = this.#cssColor(
+          CHART_CSS_VARS[colorIdx % CHART_CSS_VARS.length]
+        );
+        colorIdx += 1;
+      }
 
       const text = document.createElement("span");
       text.className = "min-w-0 break-words";
-      const total = pairs.reduce((s, [, a]) => s + a, 0);
-      const pct =
-        total > 0 ? Math.min(100, Math.round((amount / total) * 100)) : 0;
+      const pct = Math.min(100, Math.round((amount / base) * 100));
       text.textContent = `${label}（${pct}%）`;
 
       row.appendChild(dot);
@@ -171,6 +208,26 @@ export default class extends Controller {
     });
 
     root.appendChild(wrap);
+  }
+
+  #revenueTotal() {
+    let sum = 0;
+    const forms = this.element.querySelectorAll("form");
+
+    for (const form of forms) {
+      const amountInput = form.querySelector(
+        'input[name="revenue_budget[amount]"]'
+      );
+      if (!amountInput) continue;
+
+      const raw = amountInput.value?.replace(/,/g, "").trim();
+      if (!raw) continue;
+      const n = Number.parseFloat(raw);
+      if (Number.isNaN(n) || n <= 0) continue;
+
+      sum += n;
+    }
+    return sum;
   }
 
   /** @returns {Array<[string, number]>} sorted by amount descending */
@@ -199,18 +256,6 @@ export default class extends Controller {
     }
 
     return [ ...totals.entries() ].sort((a, b) => b[1] - a[1]);
-  }
-
-  #applyChartTheme() {
-    if (!this._chart) return;
-    Chart.defaults.color = this.#cssColor("--muted-foreground");
-    this._chart.options.plugins = this._chart.options.plugins || {};
-    const tooltip = this._chart.options.plugins.tooltip || {};
-    tooltip.backgroundColor = this.#cssColor("--card");
-    tooltip.borderColor = this.#cssColor("--border");
-    tooltip.titleColor = this.#cssColor("--foreground");
-    tooltip.bodyColor = this.#cssColor("--muted-foreground");
-    this._chart.update();
   }
 
   /** Canvas parent is in a flex/svh layout — defer resize so dimensions are non-zero. */

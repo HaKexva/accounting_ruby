@@ -11,6 +11,9 @@ Rails.application.routes.draw do
 
   root "dashboard#index"
   get "expenses/history", to: "dashboard#history", as: :expense_history
+  post   "actual_expenditures", to: "actual_expenditures#create", as: :actual_expenditures
+  patch  "actual_expenditures/:id", to: "actual_expenditures#update", as: :actual_expenditure
+  delete "actual_expenditures/:id", to: "actual_expenditures#destroy"
 
   get "budgets", to: "budgets#index", as: :budgets
   post   "budgets/revenue_budgets", to: "budgets#create_revenue_budget", as: :budget_revenue_budgets

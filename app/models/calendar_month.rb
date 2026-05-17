@@ -1,5 +1,4 @@
 class CalendarMonth < ApplicationRecord
-  belongs_to :user, inverse_of: :calendar_months
   has_many :revenue_budgets, class_name: "RevenueBudget", inverse_of: :calendar_month, dependent: :destroy
   has_many :expenditure_budgets, class_name: "ExpenditureBudget", inverse_of: :calendar_month, dependent: :destroy
   has_many :actual_expenditures, class_name: "ActualExpenditure", inverse_of: :calendar_month, dependent: :destroy
@@ -7,5 +6,5 @@ class CalendarMonth < ApplicationRecord
   validates :month, presence: true,
                     numericality: { only_integer: true, greater_than_or_equal_to: 1, less_than_or_equal_to: 12 }
   validates :year, presence: true, numericality: { only_integer: true }
-  validates :month, uniqueness: { scope: %i[user_id year] }
+  validates :month, uniqueness: { scope: :year }
 end

@@ -23,48 +23,40 @@ class Views::Budgets::Index < Views::Base
         class: "flex min-h-0 w-full flex-1 flex-col",
         data: { controller: "budget-live-totals" }
       ) do
-      div(
-        class: [
-          PAGE_TOP_STICKY,
-          "!space-y-2 !pb-2 sm:!space-y-2 sm:!pb-3",
-          "max-h-[min(35svh,20rem)] sm:max-h-[38svh]",
-          "min-h-0 flex flex-col overflow-hidden",
-          "border-border/40 bg-background/90"
-        ].join(" ")
-      ) do
-        div(class: "shrink-0") { budget_header_row }
-        div(class: "min-h-0 flex-1 overflow-y-auto overscroll-contain") do
-          budget_month_summary_panel
-        end
-      end
-
-      div(
-        class: [
-          PAGE_BODY_BELOW_STICKY,
-          "!gap-4 !pt-1 sm:!gap-5 sm:!pt-2",
-          "!pb-3 sm:!pb-4"
-        ].join(" ")
-      ) do
-        budget_main_editor_section_intro
-
-        div(class: "w-full", data: { controller: "budgets-kind" }) do
-          div(
-            class: (@initial_budget_kind == :expenditure) ? "hidden" : nil,
-            data: { budgets_kind_target: "revenuePanel" }
-          ) do
-            revenue_budget_deck
-          end
-
-          div(
-            class: (@initial_budget_kind == :revenue) ? "hidden" : nil,
-            data: { budgets_kind_target: "expenditurePanel" }
-          ) do
-            expenditure_budget_deck
-          end
+        div(class: "hidden shrink-0 border-b border-border/50 pb-3 lg:block lg:pb-4") do
+          budget_header_row
         end
 
-        budget_footer_hint
-      end
+        div(class: PAGE_SPLIT_GRID_CLASS) do
+          div(class: PAGE_SPLIT_LEFT_STICKY_CLASS) do
+            div(class: "shrink-0 lg:hidden") { budget_header_row }
+            div(class: "min-h-0 flex-1 overflow-y-auto overscroll-contain lg:overflow-visible lg:flex-none") do
+              budget_month_summary_panel
+            end
+          end
+
+          div(class: PAGE_SPLIT_RIGHT_BODY_CLASS) do
+            budget_main_editor_section_intro
+
+            div(class: "w-full", data: { controller: "budgets-kind" }) do
+              div(
+                class: (@initial_budget_kind == :expenditure) ? "hidden" : nil,
+                data: { budgets_kind_target: "revenuePanel" }
+              ) do
+                revenue_budget_deck
+              end
+
+              div(
+                class: (@initial_budget_kind == :revenue) ? "hidden" : nil,
+                data: { budgets_kind_target: "expenditurePanel" }
+              ) do
+                expenditure_budget_deck
+              end
+            end
+
+            budget_footer_hint
+          end
+        end
       end
     end
   end
@@ -193,62 +185,36 @@ class Views::Budgets::Index < Views::Base
 
   def budget_header_row
     div(class: "flex flex-row items-start justify-between gap-3 shrink-0") do
-      div(class: "min-w-0 flex-1 space-y-1 pr-2") do
-        h1(class: "text-balance text-lg font-semibold tracking-tight text-foreground sm:text-xl") { "預算" }
-        p(class: "text-xs leading-snug text-muted-foreground sm:text-sm") do
-          plain "上方僅供快速查看加總與占比；請於下方填寫、修改預算。"
-        end
+      div(class: "min-w-0 flex-1 pr-2") do
+        h1(class: PAGE_TITLE_CLASS) { "預算" }
       end
       div(class: "flex shrink-0 pt-0.5") { }
     end
   end
 
   def budget_month_summary_panel
-    section(
-      class: [
-        "flex min-h-0 shrink-0 flex-col rounded-lg border border-border/50",
-        "bg-muted/15 ring-1 ring-border/30"
-      ].join(" "),
-      aria: { label: "本月預算快速摘要" }
-    ) do
-      div(class: "border-b border-border/40 px-3 py-2 sm:px-3.5") do
+    section(class: MONTH_SUMMARY_SECTION_CLASS, aria: { label: "本月預算摘要" }) do
+      div(class: MONTH_SUMMARY_HEADER_CLASS) do
         div(class: "flex flex-col gap-0.5 sm:flex-row sm:items-baseline sm:justify-between") do
-          h2(class: "text-xs font-medium text-muted-foreground") { "本月摘要（加總）" }
-          span(class: "text-[11px] tabular-nums text-muted-foreground sm:text-xs") { current_month_label }
+          h2(class: MONTH_SUMMARY_TITLE_CLASS) { "本月摘要" }
+          span(class: MONTH_SUMMARY_PERIOD_CLASS) { current_month_label }
         end
       end
-      div(class: "flex min-h-0 flex-col gap-3 p-3 sm:gap-4 sm:p-4 lg:flex-row lg:items-stretch lg:gap-6") do
-        div(
-          class: [
-            "flex w-full min-w-0 flex-row flex-wrap justify-center gap-1.5 sm:gap-2",
-            "lg:w-auto lg:shrink-0 lg:flex-col lg:flex-nowrap lg:items-stretch lg:justify-start lg:gap-2.5"
-          ].join(" ")
-        ) do
+      div(class: MONTH_SUMMARY_BODY_CLASS) do
+        div(class: MONTH_SUMMARY_STATS_ROW_CLASS) do
           budget_summary_stat(label: "收入預算合計", total: revenue_budget_total, count: @revenue_budgets.size, kind: :revenue)
           budget_summary_stat(label: "支出預算合計", total: expenditure_budget_total, count: @expenditure_budgets.size, kind: :expenditure)
           budget_summary_net_stat(total: revenue_budget_total - expenditure_budget_total)
         end
-        div(
-          class: [
-            "mx-auto flex w-full max-w-sm shrink-0 flex-col gap-2 rounded-lg border border-border/50 bg-muted/20 p-2",
-            "min-h-0",
-            "sm:max-w-md sm:p-3",
-            "lg:mx-0 lg:max-w-none lg:flex-1 lg:justify-start"
-          ].join(" ")
-        ) do
-          p(class: "shrink-0 text-center text-xs font-medium text-foreground") { "支出結構" }
-          p(class: "shrink-0 text-center text-[11px] leading-snug text-muted-foreground sm:text-xs") { "各類支出占比（與下方欄位即時連動）" }
+        div(class: CHART_PANEL_CLASS) do
+          p(class: "shrink-0 text-center text-xs font-medium text-foreground") { "收入運用" }
+          p(class: "shrink-0 text-center text-[11px] leading-snug text-muted-foreground sm:text-xs") { "各類支出與未使用收入（即時連動；有填收入時占比以收入合計為分母）" }
           div(class: "flex w-full shrink justify-center py-1") do
-            div(
-              class: [
-                "relative aspect-square w-full max-w-[12rem] min-h-[10rem] min-w-[10rem]",
-                "sm:max-w-[13.5rem] sm:min-h-[11rem] sm:min-w-[11rem] lg:max-w-[14rem]"
-              ].join(" ")
-            ) do
+            div(class: CHART_CANVAS_WRAP_CLASS) do
               canvas(
                 class: "block h-full w-full max-h-full",
                 role: "img",
-                aria: { label: "圓餅圖：支出預算各類別金額與占比" },
+                aria: { label: "圓餅圖：收入合計中各類支出與未使用收入占比" },
                 data: { budget_allocation_chart_target: "canvas" }
               )
             end
@@ -256,7 +222,7 @@ class Views::Budgets::Index < Views::Base
           div(
             class: "min-h-0 shrink-0",
             data: { budget_allocation_chart_target: "chartLegend" },
-            aria: { label: "支出類別圖例" }
+            aria: { label: "支出類別與未使用收入圖例" }
           )
         end
       end
@@ -638,12 +604,7 @@ class Views::Budgets::Index < Views::Base
   end
 
   def current_month_label
-    if @calendar_month
-      "#{@calendar_month.year} 年 #{@calendar_month.month} 月"
-    else
-      t = Time.zone.today
-      "#{t.year} 年 #{t.month} 月"
-    end
+    calendar_month_label_for(@calendar_month)
   end
 
   def format_decimal(amount)
@@ -661,49 +622,17 @@ class Views::Budgets::Index < Views::Base
   def budget_summary_stat(label:, total:, count:, kind:)
     total_target = kind == :revenue ? "revenueTotal" : "expenditureTotal"
     count_target = kind == :revenue ? "revenueCount" : "expenditureCount"
-    short = kind == :revenue ? "收入" : "支出"
-    div(
-      class: [
-        "flex min-w-0 flex-1 basis-0 flex-col items-center rounded-lg border border-border/50 bg-muted/25",
-        "px-2 py-1.5 text-center leading-tight",
-        "sm:px-2.5 sm:py-2",
-        "lg:flex-none lg:w-52 lg:basis-auto lg:items-stretch lg:px-3 lg:py-2.5"
-      ].join(" "),
-      title: label
-    ) do
-      p(class: "text-[10px] font-medium leading-none text-muted-foreground sm:text-xs sm:leading-tight") { short }
-      p(
-        class: [
-          "mt-1 text-[11px] font-semibold tabular-nums tracking-tight text-foreground break-anywhere",
-          "sm:mt-1.5 sm:text-base lg:text-lg"
-        ].join(" "),
-        data: { budget_live_totals_target: total_target }
-      ) { "NT$#{format_decimal(total)}" }
-      p(
-        class: "mt-0.5 text-[9px] tabular-nums leading-none text-muted-foreground sm:mt-1 sm:text-xs",
-        data: { budget_live_totals_target: count_target }
-      ) { "#{count} 筆" }
+    div(class: "#{STAT_CHIP_CLASS} basis-[calc(33.333%-0.35rem)] sm:basis-auto", title: label) do
+      p(class: STAT_CHIP_LABEL_CLASS) { label }
+      p(class: STAT_CHIP_VALUE_CLASS, data: { budget_live_totals_target: total_target }) { "NT$#{format_decimal(total)}" }
+      p(class: STAT_CHIP_META_CLASS, data: { budget_live_totals_target: count_target }) { "#{count} 筆" }
     end
   end
 
   def budget_summary_net_stat(total:)
-    div(
-      class: [
-        "flex min-w-0 flex-1 basis-0 flex-col items-center rounded-lg border border-border/50 bg-muted/25",
-        "px-2 py-1.5 text-center leading-tight",
-        "sm:px-2.5 sm:py-2",
-        "lg:flex-none lg:w-52 lg:basis-auto lg:items-stretch lg:px-3 lg:py-2.5"
-      ].join(" "),
-      title: "相減（收入−支出）"
-    ) do
-      p(class: "text-[10px] font-medium leading-none text-muted-foreground sm:text-xs sm:leading-tight") { "淨額" }
-      p(
-        class: [
-          "mt-1 text-[11px] font-semibold tabular-nums tracking-tight text-foreground break-anywhere",
-          "sm:mt-1.5 sm:text-base lg:text-lg"
-        ].join(" "),
-        data: { budget_live_totals_target: "netTotal" }
-      ) { "NT$#{format_decimal(total)}" }
+    div(class: "#{STAT_CHIP_CLASS} basis-[calc(33.333%-0.35rem)] sm:basis-auto", title: "相減（收入−支出）") do
+      p(class: STAT_CHIP_LABEL_CLASS) { "淨額" }
+      p(class: STAT_CHIP_VALUE_CLASS, data: { budget_live_totals_target: "netTotal" }) { "NT$#{format_decimal(total)}" }
     end
   end
 end
