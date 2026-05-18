@@ -262,7 +262,7 @@ class Views::Budgets::Index < Views::Base
         "leading-relaxed text-muted-foreground sm:mt-5 sm:py-3 sm:text-xs"
       ].join(" ")
     ) do
-      plain "未登入時以試用身分寫入。於「填寫預算」區編輯會自動儲存，卡片右上角可刪除該筆。"
+      plain "於「填寫預算」區編輯會自動儲存，卡片右上角可刪除該筆。"
     end
   end
 

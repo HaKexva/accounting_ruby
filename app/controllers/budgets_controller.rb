@@ -31,7 +31,7 @@ class BudgetsController < ApplicationController
   end
 
   def create_revenue_budget
-    budget = @calendar_month.revenue_budgets.build(revenue_budget_attributes.merge(user: @user))
+    budget = revenue_scope.build(revenue_budget_attributes)
     if budget.save
       respond_to do |format|
         format.json { render json: { ok: true, id: budget.id } }
@@ -80,7 +80,7 @@ class BudgetsController < ApplicationController
   end
 
   def create_expenditure_budget
-    budget = @calendar_month.expenditure_budgets.build(expenditure_budget_attributes.merge(user: @user))
+    budget = expenditure_scope.build(expenditure_budget_attributes)
     if budget.save
       respond_to do |format|
         format.json { render json: { ok: true, id: budget.id } }
