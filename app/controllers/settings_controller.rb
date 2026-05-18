@@ -56,8 +56,17 @@ class SettingsController < ApplicationController
     return unless require_persisted_taxonomy!
 
     item = user.expenditure_taxonomy_items.find(params[:id])
+    previous_name = item.name
     if item.update(taxonomy_item_attributes.except(:kind))
-      redirect_to settings_path(kind: item.kind), notice: "已更新「#{item.name}」。"
+      synced = ExpenditureTaxonomyRenamePropagator.call(
+        user: user,
+        kind: item.kind,
+        from: previous_name,
+        to: item.name
+      )
+      notice = "已更新「#{item.name}」。"
+      notice = "#{notice} 已同步本月 #{synced} 筆支出與預算資料。" if synced.positive?
+      redirect_to settings_path(kind: item.kind), notice: notice
     else
       redirect_to settings_path(kind: item.kind),
                   alert: item.errors.full_messages.to_sentence.presence || "無法更新。"

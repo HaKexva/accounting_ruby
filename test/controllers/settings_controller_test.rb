@@ -36,6 +36,41 @@ class SettingsControllerTest < ActionDispatch::IntegrationTest
     assert_equal "更新後類別", item.reload.name
   end
 
+  test "update taxonomy item renames current month expenditure and budget rows" do
+    month = CalendarMonth.find_or_create_by!(
+      year: Time.zone.today.year,
+      month: Time.zone.today.month
+    )
+    item = @user.expenditure_taxonomy_items.for_kind("category").first
+    old_name = item.name
+
+    expense = ActualExpenditure.create!(
+      user: @user,
+      calendar_month: month,
+      transaction_date: Time.zone.today,
+      transaction_item: "測試",
+      category: old_name,
+      payment_method: "現金",
+      actual_amount: 10,
+      posted_amount: 10
+    )
+    budget = ExpenditureBudget.create!(
+      user: @user,
+      calendar_month: month,
+      category: old_name,
+      item: "列",
+      amount: 100
+    )
+
+    patch settings_taxonomy_item_path(item), params: {
+      expenditure_taxonomy_item: { name: "同步後類別" }
+    }
+
+    assert_redirected_to settings_path(kind: "category")
+    assert_equal "同步後類別", expense.reload.category
+    assert_equal "同步後類別", budget.reload.category
+  end
+
   test "destroy taxonomy item" do
     item = @user.expenditure_taxonomy_items.for_kind("payment_platform").first
     assert_difference -> { @user.expenditure_taxonomy_items.count }, -1 do
