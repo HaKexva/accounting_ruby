@@ -7,11 +7,17 @@ class BudgetsController < ApplicationController
   ]
 
   def index
-    user = trial_account_owner
-    revenue_budgets, expenditure_budgets, calendar_month = budget_index_state
+    @user = trial_account_owner
+    unless @user
+      redirect_to login_path, alert: "請先登入。"
+      return
+    end
+
+    revenue_budgets, expenditure_budgets, calendar_month = budget_index_state_for(@user)
     focus = carousel_focus_from_params(revenue_budgets, expenditure_budgets)
 
-    taxonomy = ExpenditureTaxonomy.for_user(user)
+    taxonomy = ExpenditureTaxonomy.for_user(@user)
+    response.headers["Turbo-Cache-Control"] = "no-cache"
 
     render Views::Budgets::Index.new(
       revenue_budgets: revenue_budgets,
@@ -153,14 +159,11 @@ class BudgetsController < ApplicationController
     end
   end
 
-  def budget_index_state
-    user = trial_account_owner
-    return [ [], [], nil ] unless user
-
+  def budget_index_state_for(user)
     today = Time.zone.today
     calendar_month = CalendarMonth.find_or_create_by!(year: today.year, month: today.month)
-    revenue_budgets = RevenueBudget.where(user: user, calendar_month: calendar_month).order(:id).to_a
-    expenditure_budgets = ExpenditureBudget.where(user: user, calendar_month: calendar_month).order(:id).to_a
+    revenue_budgets = revenue_scope_for(user, calendar_month).order(:id).to_a
+    expenditure_budgets = expenditure_scope_for(user, calendar_month).order(:id).to_a
     [ revenue_budgets, expenditure_budgets, calendar_month ]
   end
 
@@ -176,11 +179,19 @@ class BudgetsController < ApplicationController
   end
 
   def revenue_scope
-    RevenueBudget.where(calendar_month: @calendar_month, user: @user)
+    revenue_scope_for(@user, @calendar_month)
   end
 
   def expenditure_scope
-    ExpenditureBudget.where(calendar_month: @calendar_month, user: @user)
+    expenditure_scope_for(@user, @calendar_month)
+  end
+
+  def revenue_scope_for(user, calendar_month)
+    RevenueBudget.where(user: user, calendar_month: calendar_month)
+  end
+
+  def expenditure_scope_for(user, calendar_month)
+    ExpenditureBudget.where(user: user, calendar_month: calendar_month)
   end
 
   def revenue_budget_attributes
