@@ -36,6 +36,39 @@ class SettingsControllerTest < ActionDispatch::IntegrationTest
     assert_equal "更新後類別", item.reload.name
   end
 
+  test "update taxonomy item renames expenditures including history" do
+    month = CalendarMonth.find_or_create_by!(
+      year: Time.zone.today.year,
+      month: Time.zone.today.month
+    )
+    past_month = CalendarMonth.create!(year: month.year - 1, month: month.month)
+    item = @user.expenditure_taxonomy_items.for_kind("category").first
+    old_name = item.name
+
+    expense = ActualExpenditure.create!(
+      user: @user,
+      calendar_month: past_month,
+      transaction_date: Date.new(past_month.year, past_month.month, 1),
+      transaction_item: "舊紀錄",
+      category: old_name,
+      payment_method: "現金",
+      actual_amount: 10,
+      posted_amount: 10
+    )
+
+    patch settings_taxonomy_item_path(item), params: {
+      expenditure_taxonomy_item: { name: "歷史同步類別" }
+    }
+
+    assert_redirected_to settings_path(kind: "category")
+    assert_equal "歷史同步類別", expense.reload.category
+
+    get expense_history_path
+    assert_response :success
+    assert_includes response.body, "歷史同步類別"
+    assert_includes response.body, "舊紀錄"
+  end
+
   test "destroy taxonomy item" do
     item = @user.expenditure_taxonomy_items.for_kind("payment_platform").first
     assert_difference -> { @user.expenditure_taxonomy_items.count }, -1 do

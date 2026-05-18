@@ -11,9 +11,17 @@ module Authentication
   private
 
   def current_user
-    return @current_user if defined?(@current_user)
+    session_user_id = session[:user_id].presence&.to_i
+    if session_user_id.blank?
+      @current_user = nil
+      return nil
+    end
 
-    @current_user = User.find_by(id: session[:user_id]) if session[:user_id].present?
+    if defined?(@current_user) && @current_user&.id == session_user_id
+      return @current_user
+    end
+
+    @current_user = User.find_by(id: session_user_id)
   end
 
   def signed_in?
