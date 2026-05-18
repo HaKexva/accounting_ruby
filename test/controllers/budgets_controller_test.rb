@@ -8,6 +8,31 @@ class BudgetsControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
   end
 
+  test "index shows only the current user budgets" do
+    travel_to Time.zone.local(2026, 5, 15, 12, 0, 0) do
+      month = CalendarMonth.find_or_create_by!(year: 2026, month: 5)
+      other = User.create!(google_uid: "other-budget-user", email: "other-budget@test.example")
+
+      mine = RevenueBudget.create!(
+        user: users(:one),
+        calendar_month: month,
+        item: "我的薪水",
+        amount: 100
+      )
+      RevenueBudget.create!(
+        user: other,
+        calendar_month: month,
+        item: "別人的薪水",
+        amount: 999
+      )
+
+      get budgets_path
+      assert_response :success
+      assert_includes response.body, mine.item
+      assert_not_includes response.body, "別人的薪水"
+    end
+  end
+
   test "create revenue budget" do
     travel_to Time.zone.local(2026, 5, 15, 12, 0, 0) do
       assert_difference -> { RevenueBudget.count }, 1 do

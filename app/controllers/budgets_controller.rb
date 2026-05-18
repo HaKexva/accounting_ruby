@@ -159,8 +159,8 @@ class BudgetsController < ApplicationController
 
     today = Time.zone.today
     calendar_month = CalendarMonth.find_or_create_by!(year: today.year, month: today.month)
-    revenue_budgets = RevenueBudget.where(calendar_month: calendar_month).order(:id).to_a
-    expenditure_budgets = ExpenditureBudget.where(calendar_month: calendar_month).order(:id).to_a
+    revenue_budgets = RevenueBudget.where(user: user, calendar_month: calendar_month).order(:id).to_a
+    expenditure_budgets = ExpenditureBudget.where(user: user, calendar_month: calendar_month).order(:id).to_a
     [ revenue_budgets, expenditure_budgets, calendar_month ]
   end
 
