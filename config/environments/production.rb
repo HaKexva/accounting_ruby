@@ -61,7 +61,7 @@ Rails.application.configure do
   # config.action_mailer.raise_delivery_errors = false
 
   # Set host to be used by links generated in mailer templates and OmniAuth callbacks.
-  app_host = ENV["APP_HOST"].presence || ENV["RAILWAY_PUBLIC_DOMAIN"].presence
+  app_host = GoogleOauth.app_host
   if app_host.present?
     config.action_mailer.default_url_options = { host: app_host, protocol: "https" }
     config.action_controller.default_url_options = { host: app_host, protocol: "https" }
