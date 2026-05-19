@@ -15,16 +15,14 @@ export default class extends Controller {
   #amountFocused = false;
   #pinnedClass = [
     "fixed",
-    "z-[60]",
+    "z-20",
     "left-0",
     "right-0",
     "w-full",
     "max-w-none",
     "border-b",
     "border-border/60",
-    "bg-background/95",
-    "backdrop-blur-md",
-    "supports-[backdrop-filter]:bg-background/90",
+    "bg-background",
     "shadow-md",
     "px-4",
     "pb-3",
@@ -170,10 +168,10 @@ export default class extends Controller {
   #updatePinnedTop() {
     if (!this.#pinned) return;
     const panel = this.stickyPanelTarget;
-    const headerH = this.#headerBottom();
+    const headerH = Math.ceil(this.#headerBottom());
     const vv = window.visualViewport;
     if (vv && vv.height < window.innerHeight * 0.72) {
-      panel.style.top = `${vv.offsetTop}px`;
+      panel.style.top = `${Math.max(vv.offsetTop, headerH)}px`;
     } else {
       panel.style.top = `${headerH}px`;
     }

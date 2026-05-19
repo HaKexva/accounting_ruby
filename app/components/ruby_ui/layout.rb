@@ -22,10 +22,10 @@ module RubyUI
           main(
             id: "app-main-scroll",
             class: [
-              "app-main-gradient flex-1 overflow-y-auto overflow-x-hidden min-h-0",
-              "px-4 py-6 sm:px-6 sm:py-8 lg:px-10",
-              "pt-[max(1rem,env(safe-area-inset-top,0px))]",
-              "pb-[max(1rem,env(safe-area-inset-bottom,0px))]"
+              "app-main-gradient flex-1 overflow-y-auto overflow-x-hidden min-h-0 overscroll-y-contain",
+              "px-4 py-4 sm:px-6 sm:py-8 lg:px-10",
+              "pb-[max(1rem,env(safe-area-inset-bottom,0px))]",
+              "max-lg:pt-3 lg:pt-[max(1rem,env(safe-area-inset-top,0px))]"
             ].join(" ")
           ) do
             div(class: "w-full max-w-6xl mx-auto space-y-6 lg:space-y-8") do
@@ -101,11 +101,11 @@ module RubyUI
     end
 
     def render_mobile_header
-      header(
+          header(
         id: "app-mobile-header",
         class: [
-          "lg:hidden flex items-center justify-between shrink-0",
-          "border-b border-border/80 bg-card/95 backdrop-blur-md px-4 py-3",
+          "lg:hidden relative z-30 flex items-center justify-between shrink-0",
+          "border-b border-border/80 bg-background px-4 py-3",
           "shadow-sm shadow-black/[0.03]",
           "pt-[max(0.75rem,env(safe-area-inset-top,0px))]"
         ].join(" ")
