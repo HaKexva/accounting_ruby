@@ -5,9 +5,12 @@ class Views::Dashboard::History < Views::Base
 
   EDIT_FORM_ID = "history_edit_actual_expenditure_form"
 
-  def initialize(actual_expenditures:, taxonomy:)
+  def initialize(actual_expenditures:, taxonomy:, filters:, month_options:, total_unfiltered:)
     @actual_expenditures = actual_expenditures
     @taxonomy = taxonomy
+    @filters = filters
+    @month_options = month_options
+    @total_unfiltered = total_unfiltered
   end
 
   def view_template
@@ -19,10 +22,15 @@ class Views::Dashboard::History < Views::Base
     ) do
       history_header
 
-      if @actual_expenditures.empty?
+      if @total_unfiltered.zero?
         empty_state
       else
-        expenditures_list
+        history_filters_bar
+        if @actual_expenditures.empty?
+          filtered_empty_state
+        else
+          expenditures_list
+        end
       end
 
       edit_modal
@@ -34,6 +42,101 @@ class Views::Dashboard::History < Views::Base
   def history_header
     page_header(title: "歷史紀錄", subtitle: "瀏覽、編輯或刪除過去的支出") do
       Link(href: root_path, variant: :outline, size: :md) { "返回實際支出" }
+    end
+  end
+
+  def history_filters_bar
+    section(class: "#{CARD_SECTION_CLASS} overflow-hidden", aria: { label: "篩選與排序" }) do
+      form(
+        method: "get",
+        action: expense_history_path,
+        class: "space-y-4 p-4 sm:p-5",
+        id: "history_filters_form"
+      ) do
+        div(class: "grid gap-4 sm:grid-cols-2") do
+          history_filter_select(
+            label: "消費類別",
+            id: "history_filter_category",
+            name: "category",
+            options: @taxonomy.categories,
+            selected: @filters.category,
+            prompt: "全部類別"
+          )
+          history_filter_select(
+            label: "支出方式",
+            id: "history_filter_payment_method",
+            name: "payment_method",
+            options: @taxonomy.payment_methods,
+            selected: @filters.payment_method,
+            prompt: "全部方式"
+          )
+          history_filter_select(
+            label: "月份",
+            id: "history_filter_month",
+            name: "month",
+            options: @month_options.map(&:last),
+            option_labels: @month_options.to_h { |label, value| [ value, label ] },
+            selected: @filters.month,
+            prompt: "全部月份"
+          )
+          history_filter_select(
+            label: "排序",
+            id: "history_filter_sort",
+            name: "sort",
+            options: ExpenseHistoryQuery::SORTS.keys,
+            option_labels: ExpenseHistoryQuery::SORT_LABELS,
+            selected: @filters.sort,
+            include_blank: false
+          )
+        end
+
+        expenditure_field_row(label: "關鍵字：", id: "history_filter_q") do
+          Input(
+            id: "history_filter_q",
+            name: "q",
+            type: :search,
+            value: @filters.q,
+            placeholder: "搜尋項目名稱…"
+          )
+        end
+
+        div(class: "flex flex-wrap items-center gap-2 pt-1") do
+          Button(type: :submit, variant: :primary, size: :md) { "套用" }
+          if @filters.active?
+            Link(href: expense_history_path, variant: :outline, size: :md) { "清除篩選" }
+          end
+        end
+      end
+    end
+  end
+
+  def history_filter_select(label:, id:, name:, options:, selected:, prompt: nil, include_blank: true,
+                            option_labels: nil)
+    div(class: "flex flex-col gap-1.5") do
+      label(class: "text-sm font-medium text-foreground", for: id) { label }
+      NativeSelect(id: id, name: name, class: "w-full") do
+        if include_blank && prompt
+          NativeSelectOption(value: "", selected: selected.blank?) { plain prompt }
+        end
+        options.each do |value|
+          text = option_labels ? option_labels.fetch(value, value) : value
+          NativeSelectOption(value: value, selected: selected == value) { plain text }
+        end
+      end
+    end
+  end
+
+  def filtered_empty_state
+    section(class: "#{CARD_SECTION_CLASS} overflow-hidden", aria: { label: "實際支出列表" }) do
+      div(class: "flex flex-col items-center px-6 py-12 text-center sm:py-14") do
+        p(class: "text-base font-semibold text-foreground") { "沒有符合條件的紀錄" }
+        p(class: "mt-2 max-w-sm text-sm text-muted-foreground") do
+          "請調整篩選條件，或清除篩選後再試。"
+        end
+        div(class: "mt-5") do
+          Link(href: expense_history_path, variant: :outline, size: :md) { "清除篩選" }
+        end
+      end
     end
   end
 
@@ -57,13 +160,27 @@ class Views::Dashboard::History < Views::Base
   def expenditures_list
     section(class: "#{CARD_SECTION_CLASS} overflow-hidden", aria: { label: "實際支出列表" }) do
       div(class: MONTH_SUMMARY_HEADER_CLASS) do
-        h2(class: MONTH_SUMMARY_TITLE_CLASS) { "全部紀錄" }
+        h2(class: MONTH_SUMMARY_TITLE_CLASS) { list_heading_title }
+        p(class: "#{MONTH_SUMMARY_PERIOD_CLASS} mt-0.5") { list_heading_subtitle }
       end
       ul(class: "divide-y divide-border/60", role: "list") do
         @actual_expenditures.each do |expenditure|
           history_list_item(expenditure)
         end
       end
+    end
+  end
+
+  def list_heading_title
+    @filters.active? ? "符合條件的紀錄" : "全部紀錄"
+  end
+
+  def list_heading_subtitle
+    count = @actual_expenditures.size
+    if @filters.active?
+      "共 #{count} 筆（已篩選）"
+    else
+      "共 #{count} 筆"
     end
   end
 
@@ -118,14 +235,7 @@ class Views::Dashboard::History < Views::Base
     p(class: "mt-1 text-base font-semibold text-foreground truncate") do
       item_title(expenditure)
     end
-    if expenditure.category.present?
-      span(
-        class: [
-          "mt-2 inline-block max-w-full truncate rounded-md border border-border/60",
-          "bg-muted/40 px-2 py-0.5 text-xs text-muted-foreground"
-        ].join(" ")
-      ) { expenditure.category }
-    end
+    history_meta_chips(expenditure)
     p(class: "mt-2 text-sm font-semibold tabular-nums text-destructive") do
       plain "NT$ #{format_decimal(expenditure.posted_amount)}"
     end
@@ -355,12 +465,34 @@ class Views::Dashboard::History < Views::Base
     Base64.strict_encode64(record_data(expenditure).to_json)
   end
 
+  def history_meta_chips(expenditure)
+    chips = []
+    chips << expenditure.category if expenditure.category.present?
+    payment = expenditure.payment_summary
+    chips << payment if payment.present?
+    return if chips.empty?
+
+    div(class: "mt-2 flex flex-wrap gap-1.5") do
+      chips.each { |text| history_meta_chip(text) }
+    end
+  end
+
+  def history_meta_chip(text)
+    span(
+      class: [
+        "inline-block max-w-full truncate rounded-md border border-border/60",
+        "bg-muted/40 px-2 py-0.5 text-xs text-muted-foreground"
+      ].join(" ")
+    ) { plain text }
+  end
+
   def record_data(expenditure)
     {
       id: expenditure.id,
       transaction_date: expenditure.transaction_date.iso8601,
       transaction_item: expenditure.transaction_item,
       category: expenditure.category,
+      payment_summary: expenditure.payment_summary,
       payment_method: expenditure.payment_method,
       credit_card_payment_method: expenditure.credit_card_payment_method,
       payment_timing: expenditure.payment_timing,

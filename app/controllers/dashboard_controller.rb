@@ -48,17 +48,42 @@ class DashboardController < ApplicationController
 
   def history
     user = trial_account_owner
-    expenditures =
+    taxonomy = ExpenditureTaxonomy.for_user(user)
+    base_scope =
       if user
         ActualExpenditure.includes(:calendar_month).where(user: user)
-          .order(transaction_date: :desc, id: :desc)
       else
         ActualExpenditure.none
       end
-    taxonomy = ExpenditureTaxonomy.for_user(user)
+
+    filters = ExpenseHistoryQuery::Filters.from_params(params, taxonomy: taxonomy)
+    expenditures = ExpenseHistoryQuery.new(scope: base_scope, filters: filters).call
+    month_options = history_month_options(user)
+
     render Views::Dashboard::History.new(
       actual_expenditures: expenditures,
-      taxonomy: taxonomy
+      taxonomy: taxonomy,
+      filters: filters,
+      month_options: month_options,
+      total_unfiltered: base_scope.count
     )
+  end
+
+  private
+
+  def history_month_options(user)
+    return [] unless user
+
+    CalendarMonth
+      .joins(:actual_expenditures)
+      .where(actual_expenditures: { user_id: user.id })
+      .distinct
+      .order(year: :desc, month: :desc)
+      .pluck(:year, :month)
+      .map { |year, month| [ format_history_month(year, month), format("%04d-%02d", year, month) ] }
+  end
+
+  def format_history_month(year, month)
+    "#{year} 年 #{month} 月"
   end
 end

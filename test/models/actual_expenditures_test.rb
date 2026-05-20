@@ -36,4 +36,14 @@ class ActualExpenditureTest < ActiveSupport::TestCase
 
     assert record.valid?
   end
+
+  test "payment_summary joins method and platform for multi-pay" do
+    record = actual_expenditures(:one)
+    assert_equal "多元支付 · LINE Pay", record.payment_summary
+  end
+
+  test "payment_summary joins method card kind and timing for credit card" do
+    record = actual_expenditures(:two)
+    assert_equal "玉山信用卡 · 一次支付 · 本月支付", record.payment_summary
+  end
 end

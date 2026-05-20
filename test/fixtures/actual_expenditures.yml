@@ -2,13 +2,13 @@ one:
   user: one
   calendar_month: one
   transaction_date: 2026-04-25
-  transaction_item: MyString
-  category: MyString
-  payment_method: MyString
-  credit_card_payment_method: MyString
-  payment_timing: MyString
+  transaction_item: Lunch
+  category: 生活花費：食
+  payment_method: 多元支付
+  credit_card_payment_method:
+  payment_timing:
   actual_amount: 9.99
-  payment_platform: MyString
+  payment_platform: LINE Pay
   posted_amount: 9.99
   note: MyText
 
@@ -16,12 +16,12 @@ two:
   user: one
   calendar_month: one
   transaction_date: 2026-04-25
-  transaction_item: MyString
-  category: MyString
-  payment_method: MyString
-  credit_card_payment_method: MyString
-  payment_timing: MyString
+  transaction_item: Transit
+  category: 生活花費：行
+  payment_method: 玉山信用卡
+  credit_card_payment_method: 一次支付
+  payment_timing: 本月支付
   actual_amount: 9.99
-  payment_platform: MyString
+  payment_platform:
   posted_amount: 9.99
   note: MyText

@@ -198,6 +198,7 @@ export default class extends Controller {
       transaction_item:
         record.transaction_item ?? record.transactionItem ?? "",
       category: record.category ?? "",
+      payment_summary: record.payment_summary ?? record.paymentSummary ?? "",
       payment_method: record.payment_method ?? record.paymentMethod ?? "",
       credit_card_payment_method:
         record.credit_card_payment_method ??
@@ -303,26 +304,66 @@ export default class extends Controller {
     );
     if (!body) return;
 
-    const title = record.transaction_item?.trim() || "(無標題)";
-    const date = record.transaction_date || "";
-    const category = record.category?.trim() || "";
-    const amount = record.posted_amount ?? "";
-
-    body.innerHTML = `
-      <p class="text-sm text-muted-foreground tabular-nums">${this.#escapeHtml(date)}</p>
-      <p class="text-base font-medium text-foreground truncate">${this.#escapeHtml(title)}</p>
-      ${
-        category
-          ? `<p class="text-sm text-muted-foreground truncate">類別：${this.#escapeHtml(category)}</p>`
-          : ""
-      }
-      <p class="text-sm font-medium tabular-nums text-destructive">金額：${this.#escapeHtml(amount)}</p>
-    `;
+    body.innerHTML = this.#listItemBodyHtml(record);
 
     item.setAttribute(
       "data-expenditure-history-record-param",
       btoa(unescape(encodeURIComponent(JSON.stringify(record))))
     );
+  }
+
+  #formatListDate(iso) {
+    if (!iso) return "";
+    const s = String(iso);
+    const datePart = s.slice(0, 10);
+    return /^\d{4}-\d{2}-\d{2}$/.test(datePart) ? datePart : s;
+  }
+
+  #paymentSummaryFromRecord(record) {
+    const summary = (record.payment_summary ?? "").trim();
+    if (summary) return summary;
+
+    const methodName = (record.payment_method ?? "").trim();
+    if (!methodName) return "";
+
+    const parts = [methodName];
+    if (methodName.includes("信用卡")) {
+      const card = (record.credit_card_payment_method ?? "").trim();
+      const timing = (record.payment_timing ?? "").trim();
+      if (card) parts.push(card);
+      if (timing) parts.push(timing);
+    } else if (methodName === "多元支付") {
+      const platform = (record.payment_platform ?? "").trim();
+      if (platform) parts.push(platform);
+    }
+    return parts.join(" · ");
+  }
+
+  #metaChipHtml(text) {
+    return `<span class="inline-block max-w-full truncate rounded-md border border-border/60 bg-muted/40 px-2 py-0.5 text-xs text-muted-foreground">${this.#escapeHtml(text)}</span>`;
+  }
+
+  #listItemBodyHtml(record) {
+    const title = (record.transaction_item ?? "").trim() || "(無標題)";
+    const date = this.#formatListDate(record.transaction_date);
+    const chips = [];
+    const category = (record.category ?? "").trim();
+    if (category) chips.push(category);
+    const payment = this.#paymentSummaryFromRecord(record);
+    if (payment) chips.push(payment);
+
+    const chipsHtml = chips.length
+      ? `<div class="mt-2 flex flex-wrap gap-1.5">${chips.map((c) => this.#metaChipHtml(c)).join("")}</div>`
+      : "";
+
+    const amount = record.posted_amount ?? "";
+
+    return `
+      <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground tabular-nums">${this.#escapeHtml(date)}</p>
+      <p class="mt-1 text-base font-semibold text-foreground truncate">${this.#escapeHtml(title)}</p>
+      ${chipsHtml}
+      <p class="mt-2 text-sm font-semibold tabular-nums text-destructive">NT$ ${this.#escapeHtml(amount)}</p>
+    `;
   }
 
   #escapeHtml(text) {

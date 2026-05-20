@@ -46,5 +46,41 @@ class DashboardControllerTest < ActionDispatch::IntegrationTest
     assert_includes response.body, 'id="history_edit_category"'
     assert_includes response.body, 'id="history_edit_payment_method"'
     assert_includes response.body, 'id="history_edit_credit_card_payment_method"'
+    assert_includes response.body, "多元支付 · LINE Pay"
+    assert_includes response.body, "玉山信用卡 · 一次支付 · 本月支付"
+    assert_includes response.body, "篩選與排序"
+    assert_includes response.body, 'id="history_filter_sort"'
+  end
+
+  test "history shows filter controls when records exist" do
+    get expense_history_path
+    assert_includes response.body, 'id="history_filter_category"'
+    assert_includes response.body, 'id="history_filter_payment_method"'
+    assert_includes response.body, 'id="history_filter_month"'
+  end
+
+  test "history filters by category" do
+    get expense_history_path, params: { category: "生活花費：食" }
+    assert_response :success
+    assert_select "[data-expenditure-id]", count: 1
+    assert_includes response.body, "Lunch"
+  end
+
+  test "history shows empty message when filters match nothing" do
+    get expense_history_path, params: { category: "生活花費：食", q: "no-such-item" }
+    assert_response :success
+    assert_includes response.body, "沒有符合條件的紀錄"
+    assert_select "[data-expenditure-id]", count: 0
+  end
+
+  test "history sorts by amount descending" do
+    one = actual_expenditures(:one)
+    two = actual_expenditures(:two)
+    one.update!(posted_amount: 200)
+    two.update!(posted_amount: 10)
+
+    get expense_history_path, params: { sort: "amount_desc" }
+    assert_response :success
+    assert_operator response.body.index("Lunch"), :<, response.body.index("Transit")
   end
 end

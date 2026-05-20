@@ -18,6 +18,21 @@ class ActualExpenditure < ApplicationRecord
   validate :credit_card_payment_method_required_for_credit_card
   validate :payment_platform_required_for_multi_pay
 
+  # Human-readable 支出方式 for lists (method + card/platform details).
+  def payment_summary
+    method_name = payment_method.to_s.strip
+    return nil if method_name.blank?
+
+    parts = [ method_name ]
+    if method_name.include?("信用卡")
+      parts << credit_card_payment_method if credit_card_payment_method.present?
+      parts << payment_timing if payment_timing.present?
+    elsif method_name == "多元支付"
+      parts << payment_platform if payment_platform.present?
+    end
+    parts.join(" · ")
+  end
+
   private
 
   def nullify_blank_optional_strings
