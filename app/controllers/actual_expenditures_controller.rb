@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 class ActualExpendituresController < ApplicationController
+  include CalendarMonthResolution
   def create
     user = trial_account_owner
     unless user
@@ -84,11 +85,8 @@ class ActualExpendituresController < ApplicationController
 
   def save_record(record, created:)
     if record.save
-      today_cm = CalendarMonth.find_or_create_by!(
-        year: Time.zone.today.year,
-        month: Time.zone.today.month
-      )
-      in_dashboard_month = record.calendar_month_id == today_cm.id
+      dashboard_cm = calendar_month_from_params
+      in_dashboard_month = record.calendar_month_id == dashboard_cm.id
       respond_to do |format|
         format.json do
           payload = {
@@ -98,12 +96,12 @@ class ActualExpendituresController < ApplicationController
           }
           if created
             payload[:row] = (in_dashboard_month ? row_json(record) : nil)
-            payload[:month_tally] = month_tally_json(today_cm, record.user)
+            payload[:month_tally] = month_tally_json(dashboard_cm, record.user) if in_dashboard_month
           end
           render json: payload
         end
         format.html do
-          path = created ? root_path : expense_history_path
+          path = created ? dashboard_return_path : expense_history_path
           redirect_to path, notice: created ? "已儲存實際支出。" : "已更新。"
         end
       end
@@ -114,7 +112,7 @@ class ActualExpendituresController < ApplicationController
                  status: :unprocessable_entity
         end
         format.html do
-          path = created ? root_path : expense_history_path
+          path = created ? dashboard_return_path : expense_history_path
           redirect_to path, alert: record.errors.full_messages.to_sentence.presence || "無法儲存。"
         end
       end
@@ -176,6 +174,11 @@ class ActualExpendituresController < ApplicationController
       posted_amount: Kernel.format("%.0f", record.posted_amount.to_d.round),
       note: record.note.to_s
     }
+  end
+
+  def dashboard_return_path
+    ym = params[:ym].presence
+    ym ? root_path(ym: ym) : root_path
   end
 
   def month_tally_json(calendar_month, user)
