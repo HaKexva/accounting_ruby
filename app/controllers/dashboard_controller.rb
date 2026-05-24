@@ -1,10 +1,12 @@
 # frozen_string_literal: true
 
 class DashboardController < ApplicationController
+  include CalendarMonthResolution
+
   def index
     user = trial_account_owner
-    today = Time.zone.today
-    calendar_month = CalendarMonth.find_or_create_by!(year: today.year, month: today.month)
+    calendar_month = calendar_month_from_params
+    month_choices = calendar_month_choices_for(user, selected: calendar_month)
 
     month_scope =
       if user
@@ -37,6 +39,7 @@ class DashboardController < ApplicationController
 
     render Views::Dashboard::Index.new(
       calendar_month: calendar_month,
+      month_choices: month_choices,
       month_total: month_total,
       month_count: month_count,
       category_amounts: by_category,

@@ -138,6 +138,12 @@ class Views::Base < Components::Base
     end
   end
 
+  def calendar_month_ym_for(calendar_month)
+    return nil unless calendar_month
+
+    Kernel.format("%04d-%02d", calendar_month.year, calendar_month.month)
+  end
+
   # More caching options at https://www.phlex.fun/components/caching
   def cache_store = Rails.cache
 end

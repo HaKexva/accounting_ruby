@@ -7,6 +7,7 @@ class Views::Dashboard::Index < Views::Base
 
   def initialize(
     calendar_month:,
+    month_choices:,
     month_total:,
     month_count:,
     category_amounts:,
@@ -15,6 +16,7 @@ class Views::Dashboard::Index < Views::Base
     taxonomy:
   )
     @calendar_month = calendar_month
+    @month_choices = month_choices
     @month_total = month_total
     @month_count = month_count
     @category_amounts = category_amounts
@@ -101,12 +103,12 @@ class Views::Dashboard::Index < Views::Base
       div(class: MONTH_SUMMARY_HEADER_CLASS) do
         div(class: "flex flex-col gap-1") do
           div(class: "flex items-baseline justify-between gap-2") do
-            h2(class: MONTH_SUMMARY_TITLE_CLASS) { "本月摘要" }
-            span(class: "#{MONTH_SUMMARY_PERIOD_CLASS} shrink-0 whitespace-nowrap text-right") do
-              plain calendar_month_label
-              plain " · "
+            h2(class: MONTH_SUMMARY_TITLE_CLASS) { "月份摘要" }
+            div(class: "flex shrink-0 items-center gap-1.5 whitespace-nowrap text-right") do
+              calendar_month_selector
+              span(class: MONTH_SUMMARY_PERIOD_CLASS) { plain "·" }
               span(
-                class: "tabular-nums",
+                class: "tabular-nums #{MONTH_SUMMARY_PERIOD_CLASS}",
                 data: { actual_expenditure_form_target: "monthCount" }
               ) { plain "#{@month_count} 筆" }
             end
@@ -195,6 +197,7 @@ class Views::Dashboard::Index < Views::Base
           }
         ) do
           input(type: "hidden", name: "authenticity_token", value: view_context.form_authenticity_token)
+          input(type: "hidden", name: "ym", value: calendar_month_ym)
 
           p(
             class: "hidden rounded-md border border-border/60 bg-muted/40 px-2 py-1.5 text-[11px] text-foreground",
@@ -358,12 +361,7 @@ class Views::Dashboard::Index < Views::Base
   end
 
   def expenditure_entry_context_row
-    div(class: "flex flex-row items-start justify-between gap-3 border-b border-border/60 pb-5") do
-      div(class: "min-w-0 flex-1 pr-8 sm:pr-12") do
-        span(class: "block text-xs tabular-nums text-muted-foreground sm:text-[13px]") do
-          calendar_month_label
-        end
-      end
+    div(class: "flex flex-row items-start justify-end gap-3 border-b border-border/60 pb-5") do
       time(
         class: "shrink-0 text-xs tabular-nums text-muted-foreground sm:text-[13px]",
         data: { controller: "local-clock" }
@@ -371,7 +369,32 @@ class Views::Dashboard::Index < Views::Base
     end
   end
 
-  def calendar_month_label
-    calendar_month_label_for(@calendar_month)
+  def calendar_month_selector
+    div(class: "max-w-[9.5rem] sm:max-w-[10.5rem] [&_select]:h-8 [&_select]:py-0.5 [&_select]:text-xs sm:[&_select]:text-sm") do
+      NativeSelect(
+        id: "dashboard_calendar_month",
+        aria: { label: "選擇月份" },
+        data: {
+          controller: "dashboard-month-select",
+          dashboard_month_select_url_value: root_path,
+          action: [
+            "change->dashboard-month-select#navigate",
+            "change->ruby-ui--form-field#onChange",
+            "invalid->ruby-ui--form-field#onInvalid"
+          ].join(" ")
+        }
+      ) do
+        @month_choices.each do |cm|
+          ym = calendar_month_ym_for(cm)
+          NativeSelectOption(value: ym, selected: cm.id == @calendar_month.id) do
+            plain calendar_month_label_for(cm)
+          end
+        end
+      end
+    end
+  end
+
+  def calendar_month_ym
+    calendar_month_ym_for(@calendar_month)
   end
 end

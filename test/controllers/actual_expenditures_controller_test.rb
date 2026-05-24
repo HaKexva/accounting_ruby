@@ -30,6 +30,33 @@ class ActualExpendituresControllerTest < ActionDispatch::IntegrationTest
     end
   end
 
+  test "create returns row when expense month matches dashboard ym param" do
+    travel_to Time.zone.local(2026, 5, 15, 12, 0, 0) do
+      assert_difference -> { ActualExpenditure.count }, 1 do
+        post actual_expenditures_path,
+             params: {
+               ym: "2026-04",
+               actual_expenditure: {
+                 transaction_date: "2026-04-01",
+                 transaction_item: "四月項目",
+                 category: ExpenditureTaxonomy::DEFAULT_CATEGORIES.first,
+                 payment_method: "現金",
+                 actual_amount: "50",
+                 posted_amount: "50",
+                 note: ""
+               }
+             },
+             as: :json,
+             headers: { "Accept" => "application/json" }
+      end
+      assert_response :success
+      json = JSON.parse(response.body)
+      assert json["ok"]
+      assert json["row"]
+      assert json["month_tally"]["by_category"].is_a?(Hash)
+    end
+  end
+
   test "create omits row json when accounting month is not current wall month" do
     travel_to Time.zone.local(2026, 5, 15, 12, 0, 0) do
       assert_difference -> { ActualExpenditure.count }, 1 do

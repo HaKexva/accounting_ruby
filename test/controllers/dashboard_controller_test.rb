@@ -19,6 +19,37 @@ class DashboardControllerTest < ActionDispatch::IntegrationTest
     end
   end
 
+  test "index includes month selector with ym navigation" do
+    travel_to Time.zone.local(2026, 5, 15, 12, 0, 0) do
+      get root_path
+      assert_response :success
+      assert_includes response.body, "dashboard-month-select"
+      assert_includes response.body, 'value="2026-05"'
+    end
+  end
+
+  test "index with ym shows selected month summary data" do
+    travel_to Time.zone.local(2026, 5, 15, 12, 0, 0) do
+      april = CalendarMonth.create!(year: 2026, month: 4)
+      ActualExpenditure.create!(
+        user: users(:one),
+        calendar_month: april,
+        transaction_date: Date.new(2026, 4, 10),
+        transaction_item: "四月午餐",
+        category: ExpenditureTaxonomy::DEFAULT_CATEGORIES.first,
+        payment_method: "現金",
+        actual_amount: 100,
+        posted_amount: 100
+      )
+
+      get root_path(ym: "2026-04")
+      assert_response :success
+      assert_includes response.body, "2026 年 4 月"
+      assert_includes response.body, 'value="2026-04"'
+      assert_includes response.body, 'name="ym" value="2026-04"'
+    end
+  end
+
   test "index includes consumption structure chart data" do
     travel_to Time.zone.local(2026, 5, 15, 12, 0, 0) do
       get root_path
