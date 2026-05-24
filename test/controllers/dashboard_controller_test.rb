@@ -23,7 +23,7 @@ class DashboardControllerTest < ActionDispatch::IntegrationTest
     travel_to Time.zone.local(2026, 5, 15, 12, 0, 0) do
       get root_path
       assert_response :success
-      assert_includes response.body, "dashboard-month-select"
+      assert_includes response.body, "calendar-month-select"
       assert_includes response.body, 'value="2026-05"'
     end
   end
@@ -60,6 +60,36 @@ class DashboardControllerTest < ActionDispatch::IntegrationTest
       assert_includes response.body, "data-expenditure-month-chart-budgets-value"
       assert_includes response.body, "data-expenditure-month-chart-revenue-total-value"
       assert_includes response.body, "data-expenditure-month-chart-category-order-value"
+    end
+  end
+
+  test "history includes month filter" do
+    travel_to Time.zone.local(2026, 5, 15, 12, 0, 0) do
+      get expense_history_path
+      assert_response :success
+      assert_includes response.body, "calendar-month-select"
+      assert_includes response.body, "全部月份"
+    end
+  end
+
+  test "history with ym filters expenditures" do
+    travel_to Time.zone.local(2026, 5, 15, 12, 0, 0) do
+      april = CalendarMonth.create!(year: 2026, month: 4)
+      ActualExpenditure.create!(
+        user: users(:one),
+        calendar_month: april,
+        transaction_date: Date.new(2026, 4, 10),
+        transaction_item: "四月午餐",
+        category: ExpenditureTaxonomy::DEFAULT_CATEGORIES.first,
+        payment_method: "現金",
+        actual_amount: 100,
+        posted_amount: 100
+      )
+
+      get expense_history_path(ym: "2026-04")
+      assert_response :success
+      assert_includes response.body, "四月午餐"
+      assert_includes response.body, "2026 年 4 月紀錄"
     end
   end
 

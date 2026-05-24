@@ -94,7 +94,7 @@ class Views::Dashboard::Index < Views::Base
 
   def header_row
     page_header(title: "實際支出", subtitle: "登錄本月支出並即時查看預算餘額") do
-      Link(href: expense_history_path, variant: :outline, size: :md) { "歷史紀錄" }
+      Link(href: expense_history_path(**history_ym_params), variant: :outline, size: :md) { "歷史紀錄" }
     end
   end
 
@@ -105,7 +105,12 @@ class Views::Dashboard::Index < Views::Base
           div(class: "flex items-baseline justify-between gap-2") do
             h2(class: MONTH_SUMMARY_TITLE_CLASS) { "月份摘要" }
             div(class: "flex shrink-0 items-center gap-1.5 whitespace-nowrap text-right") do
-              calendar_month_selector
+              calendar_month_selector(
+                month_choices: @month_choices,
+                calendar_month: @calendar_month,
+                url: root_path,
+                select_id: "dashboard_calendar_month"
+              )
               span(class: MONTH_SUMMARY_PERIOD_CLASS) { plain "·" }
               span(
                 class: "tabular-nums #{MONTH_SUMMARY_PERIOD_CLASS}",
@@ -369,32 +374,11 @@ class Views::Dashboard::Index < Views::Base
     end
   end
 
-  def calendar_month_selector
-    div(class: "max-w-[9.5rem] sm:max-w-[10.5rem] [&_select]:h-8 [&_select]:py-0.5 [&_select]:text-xs sm:[&_select]:text-sm") do
-      NativeSelect(
-        id: "dashboard_calendar_month",
-        aria: { label: "選擇月份" },
-        data: {
-          controller: "dashboard-month-select",
-          dashboard_month_select_url_value: root_path,
-          action: [
-            "change->dashboard-month-select#navigate",
-            "change->ruby-ui--form-field#onChange",
-            "invalid->ruby-ui--form-field#onInvalid"
-          ].join(" ")
-        }
-      ) do
-        @month_choices.each do |cm|
-          ym = calendar_month_ym_for(cm)
-          NativeSelectOption(value: ym, selected: cm.id == @calendar_month.id) do
-            plain calendar_month_label_for(cm)
-          end
-        end
-      end
-    end
-  end
-
   def calendar_month_ym
     calendar_month_ym_for(@calendar_month)
+  end
+
+  def history_ym_params
+    calendar_month_ym.present? ? { ym: calendar_month_ym } : {}
   end
 end

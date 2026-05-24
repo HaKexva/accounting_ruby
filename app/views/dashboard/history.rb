@@ -5,8 +5,10 @@ class Views::Dashboard::History < Views::Base
 
   EDIT_FORM_ID = "history_edit_actual_expenditure_form"
 
-  def initialize(actual_expenditures:, taxonomy:)
+  def initialize(actual_expenditures:, month_filter:, month_choices:, taxonomy:)
     @actual_expenditures = actual_expenditures
+    @month_filter = month_filter
+    @month_choices = month_choices
     @taxonomy = taxonomy
   end
 
@@ -33,7 +35,7 @@ class Views::Dashboard::History < Views::Base
 
   def history_header
     page_header(title: "歷史紀錄", subtitle: "瀏覽、編輯或刪除過去的支出") do
-      Link(href: root_path, variant: :outline, size: :md) { "返回實際支出" }
+      Link(href: root_path(**dashboard_ym_params), variant: :outline, size: :md) { "返回實際支出" }
     end
   end
 
@@ -57,7 +59,17 @@ class Views::Dashboard::History < Views::Base
   def expenditures_list
     section(class: "#{CARD_SECTION_CLASS} overflow-hidden", aria: { label: "實際支出列表" }) do
       div(class: MONTH_SUMMARY_HEADER_CLASS) do
-        h2(class: MONTH_SUMMARY_TITLE_CLASS) { "全部紀錄" }
+        div(class: "flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between") do
+          h2(class: MONTH_SUMMARY_TITLE_CLASS) { history_list_title }
+          calendar_month_selector(
+            month_choices: @month_choices,
+            calendar_month: @month_filter,
+            url: expense_history_path,
+            select_id: "history_calendar_month",
+            include_all: true,
+            compact: true
+          )
+        end
       end
       ul(class: "divide-y divide-border/60", role: "list") do
         @actual_expenditures.each do |expenditure|
@@ -373,5 +385,18 @@ class Views::Dashboard::History < Views::Base
 
   def item_title(expenditure)
     expenditure.transaction_item.presence || "(無標題)"
+  end
+
+  def history_list_title
+    if @month_filter
+      "#{calendar_month_label_for(@month_filter)}紀錄"
+    else
+      "全部紀錄"
+    end
+  end
+
+  def dashboard_ym_params
+    ym = calendar_month_ym_for(@month_filter)
+    ym.present? ? { ym: ym } : {}
   end
 end

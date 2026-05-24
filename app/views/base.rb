@@ -144,6 +144,44 @@ class Views::Base < Components::Base
     Kernel.format("%04d-%02d", calendar_month.year, calendar_month.month)
   end
 
+  def calendar_month_selector(month_choices:, calendar_month:, url:, select_id: "calendar_month",
+                            include_all: false, compact: false)
+    wrap_class = if compact
+      "max-w-[9rem] sm:max-w-[10rem] [&_select]:h-8 [&_select]:py-0.5 [&_select]:text-xs sm:[&_select]:text-sm"
+    else
+      "max-w-[9.5rem] sm:max-w-[10.5rem] [&_select]:h-8 [&_select]:py-0.5 [&_select]:text-xs sm:[&_select]:text-sm"
+    end
+
+    div(class: wrap_class) do
+      NativeSelect(
+        id: select_id,
+        aria: { label: include_all ? "篩選月份" : "選擇月份" },
+        data: {
+          controller: "calendar-month-select",
+          calendar_month_select_url_value: url,
+          action: [
+            "change->calendar-month-select#navigate",
+            "change->ruby-ui--form-field#onChange",
+            "invalid->ruby-ui--form-field#onInvalid"
+          ].join(" ")
+        }
+      ) do
+        if include_all
+          NativeSelectOption(value: "", selected: calendar_month.nil?) { plain "全部月份" }
+        end
+        month_choices.each do |cm|
+          ym = calendar_month_ym_for(cm)
+          NativeSelectOption(
+            value: ym,
+            selected: calendar_month.present? && cm.id == calendar_month.id
+          ) do
+            plain calendar_month_label_for(cm)
+          end
+        end
+      end
+    end
+  end
+
   # More caching options at https://www.phlex.fun/components/caching
   def cache_store = Rails.cache
 end

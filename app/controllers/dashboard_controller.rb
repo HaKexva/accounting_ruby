@@ -51,16 +51,22 @@ class DashboardController < ApplicationController
 
   def history
     user = trial_account_owner
+    month_filter = optional_calendar_month_from_params
+    month_choices = calendar_month_choices_for(user, selected: month_filter)
+
     expenditures =
       if user
-        ActualExpenditure.includes(:calendar_month).where(user: user)
-          .order(transaction_date: :desc, id: :desc)
+        scope = ActualExpenditure.includes(:calendar_month).where(user: user)
+        scope = scope.where(calendar_month: month_filter) if month_filter
+        scope.order(transaction_date: :desc, id: :desc)
       else
         ActualExpenditure.none
       end
     taxonomy = ExpenditureTaxonomy.for_user(user)
     render Views::Dashboard::History.new(
       actual_expenditures: expenditures,
+      month_filter: month_filter,
+      month_choices: month_choices,
       taxonomy: taxonomy
     )
   end
