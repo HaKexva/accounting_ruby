@@ -8,13 +8,12 @@ on:
 # Opt JavaScript-based actions (e.g. actions/cache) into Node.js 24 before the runner default flip.
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
-  RUBY_IMAGE: ruby:3.4.8-bookworm
 
 jobs:
   scan_ruby:
     runs-on: ubuntu-latest
     container:
-      image: ${{ env.RUBY_IMAGE }}
+      image: ruby:3.4.8-bookworm
 
     steps:
       - name: Checkout code
@@ -32,7 +31,7 @@ jobs:
   scan_js:
     runs-on: ubuntu-latest
     container:
-      image: ${{ env.RUBY_IMAGE }}
+      image: ruby:3.4.8-bookworm
 
     steps:
       - name: Checkout code
@@ -47,7 +46,7 @@ jobs:
   lint:
     runs-on: ubuntu-latest
     container:
-      image: ${{ env.RUBY_IMAGE }}
+      image: ruby:3.4.8-bookworm
     env:
       RUBOCOP_CACHE_ROOT: tmp/rubocop
 
@@ -74,7 +73,7 @@ jobs:
   test:
     runs-on: ubuntu-latest
     container:
-      image: ${{ env.RUBY_IMAGE }}
+      image: ruby:3.4.8-bookworm
 
     steps:
       - name: Checkout code
