@@ -92,16 +92,17 @@ jobs:
 
   system-test:
     runs-on: ubuntu-latest
+    container:
+      image: ruby:3.4.8-bookworm
 
     steps:
       - name: Install packages
-        run: sudo apt-get update && sudo apt-get install --no-install-recommends -y libvips-dev
+        run: |
+          apt-get update
+          apt-get install --no-install-recommends -y libvips-dev chromium chromium-driver
 
       - name: Checkout code
         uses: actions/checkout@v6
-
-      - name: Install Ruby
-        uses: ./.github/actions/install-ruby-mise
 
       - name: Install gems
         uses: ./.github/actions/bundle-install
@@ -114,6 +115,8 @@ jobs:
         if: ${{ hashFiles('test/system/**/*_test.rb') != '' }}
         env:
           RAILS_ENV: test
+          CHROME_BIN: /usr/bin/chromium
+          CHROMEDRIVER_PATH: /usr/bin/chromedriver
         run: bin/rails db:test:prepare test:system
 
       - name: Keep screenshots from failed system tests
