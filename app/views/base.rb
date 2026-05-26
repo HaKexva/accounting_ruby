@@ -129,6 +129,15 @@ class Views::Base < Components::Base
     "#{STAT_CHIP_BASE_CLASS} #{accent_classes}"
   end
 
+  def calendar_month_option_label(calendar_month, planning_calendar_month: nil)
+    label = calendar_month_label_for(calendar_month)
+    if planning_calendar_month.present? && calendar_month.id == planning_calendar_month.id
+      "#{label}（下月）"
+    else
+      label
+    end
+  end
+
   def calendar_month_label_for(calendar_month)
     if calendar_month
       "#{calendar_month.year} 年 #{calendar_month.month} 月"
@@ -145,7 +154,7 @@ class Views::Base < Components::Base
   end
 
   def calendar_month_selector(month_choices:, calendar_month:, url:, select_id: "calendar_month",
-                            include_all: false, compact: false)
+                            include_all: false, compact: false, planning_calendar_month: nil)
     wrap_class = if compact
       "max-w-[9rem] sm:max-w-[10rem] [&_select]:h-8 [&_select]:py-0.5 [&_select]:text-xs sm:[&_select]:text-sm"
     else
@@ -175,7 +184,7 @@ class Views::Base < Components::Base
             value: ym,
             selected: calendar_month.present? && cm.id == calendar_month.id
           ) do
-            plain calendar_month_label_for(cm)
+            plain calendar_month_option_label(cm, planning_calendar_month: planning_calendar_month)
           end
         end
       end

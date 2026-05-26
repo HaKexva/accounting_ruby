@@ -31,16 +31,20 @@ module CalendarMonthResolution
   def calendar_month_choices_for(user, selected:)
     today = Time.zone.today
     current = CalendarMonth.for_year_month!(today.year, today.month)
-    next_month = CalendarMonth.ensure_next_month_exists!(reference_date: today)
+    planning_month = CalendarMonth.ensure_next_month_exists!(reference_date: today)
     selected ||= current
+    next_after_selected = CalendarMonth.ensure_next_month_exists!(
+      reference_date: Date.new(selected.year, selected.month, 1)
+    )
 
-    return [ current, next_month ].uniq unless user
+    anchor_months = [ current, planning_month, selected, next_after_selected ].uniq
 
-    ids = []
+    return anchor_months unless user
+
+    ids = anchor_months.map(&:id)
     ids.concat(ActualExpenditure.where(user: user).distinct.pluck(:calendar_month_id))
     ids.concat(ExpenditureBudget.where(user: user).distinct.pluck(:calendar_month_id))
     ids.concat(RevenueBudget.where(user: user).distinct.pluck(:calendar_month_id))
-    ids.concat([ current.id, next_month.id, selected.id ])
 
     CalendarMonth.where(id: ids.compact.uniq).order(year: :desc, month: :desc).to_a
   end

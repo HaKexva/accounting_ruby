@@ -6,6 +6,7 @@ class Views::Budgets::Index < Views::Base
     expenditure_budgets:,
     calendar_month:,
     month_choices:,
+    planning_calendar_month:,
     taxonomy:,
     initial_budget_kind: :revenue,
     revenue_carousel_initial_index: nil,
@@ -15,6 +16,7 @@ class Views::Budgets::Index < Views::Base
     @expenditure_budgets = expenditure_budgets
     @calendar_month = calendar_month
     @month_choices = month_choices
+    @planning_calendar_month = planning_calendar_month
     @taxonomy = taxonomy
     @initial_budget_kind = initial_budget_kind
     @revenue_carousel_initial_index = revenue_carousel_initial_index
@@ -223,15 +225,21 @@ class Views::Budgets::Index < Views::Base
   def budget_month_summary_panel
     section(class: MONTH_SUMMARY_SECTION_CLASS, aria: { label: "預算月份摘要" }) do
       div(class: MONTH_SUMMARY_HEADER_CLASS) do
-        div(class: "flex flex-col gap-0.5 sm:flex-row sm:items-baseline sm:justify-between") do
+        div(class: "flex flex-col gap-1 sm:flex-row sm:items-baseline sm:justify-between") do
           h2(class: MONTH_SUMMARY_TITLE_CLASS) { "#{calendar_month_label_for(@calendar_month)}摘要" }
-          calendar_month_selector(
-            month_choices: @month_choices,
-            calendar_month: @calendar_month,
-            url: budgets_path,
-            select_id: "budget_summary_calendar_month",
-            compact: true
-          )
+          div(class: "flex flex-col gap-0.5") do
+            calendar_month_selector(
+              month_choices: @month_choices,
+              calendar_month: @calendar_month,
+              url: budgets_path,
+              select_id: "budget_summary_calendar_month",
+              planning_calendar_month: @planning_calendar_month,
+              compact: true
+            )
+            p(class: "text-[11px] leading-snug text-muted-foreground sm:text-xs") do
+              plain "可選「#{calendar_month_label_for(@planning_calendar_month)}（下月）」提前規劃"
+            end
+          end
         end
       end
       div(class: MONTH_SUMMARY_BODY_CLASS) do
