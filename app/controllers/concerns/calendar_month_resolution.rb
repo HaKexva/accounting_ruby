@@ -7,6 +7,16 @@ module CalendarMonthResolution
 
   private
 
+  def ym_query_params
+    params[:ym].present? ? { ym: params[:ym] } : {}
+  end
+
+  def optional_calendar_month_from_params
+    return nil if params[:ym].blank?
+
+    calendar_month_from_params
+  end
+
   def calendar_month_from_params(default_date: Time.zone.today)
     parsed = parse_ym_param(params[:ym])
     parsed ||= parse_year_month_params(params[:year], params[:month])

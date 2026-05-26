@@ -8,6 +8,26 @@ class BudgetsControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
   end
 
+  test "index includes month selector and ym loads selected month" do
+    travel_to Time.zone.local(2026, 5, 15, 12, 0, 0) do
+      april = CalendarMonth.create!(year: 2026, month: 4)
+      RevenueBudget.create!(
+        user: users(:one),
+        calendar_month: april,
+        item: "四月薪水",
+        amount: 1
+      )
+
+      get budgets_path(ym: "2026-04")
+      assert_response :success
+      assert_includes response.body, "calendar-month-select"
+      assert_includes response.body, "budget_header_calendar_month"
+      assert_includes response.body, "四月薪水"
+      assert_includes response.body, "2026 年 4 月摘要"
+      assert_includes response.body, 'value="2026-04"'
+    end
+  end
+
   test "index shows only the current user budgets" do
     travel_to Time.zone.local(2026, 5, 15, 12, 0, 0) do
       month = CalendarMonth.find_or_create_by!(year: 2026, month: 5)
@@ -37,10 +57,11 @@ class BudgetsControllerTest < ActionDispatch::IntegrationTest
     travel_to Time.zone.local(2026, 5, 15, 12, 0, 0) do
       assert_difference -> { RevenueBudget.count }, 1 do
         post budget_revenue_budgets_path, params: {
+          ym: "2026-05",
           revenue_budget: { amount: "1000.50", note: "bonus", item: "薪水" }
         }
       end
-      assert_redirected_to budgets_path
+      assert_redirected_to budgets_path(ym: "2026-05")
       assert_equal "已儲存收入預算。", flash[:notice]
       created = RevenueBudget.order(:id).last
       assert_equal BigDecimal("1000.5"), created.amount

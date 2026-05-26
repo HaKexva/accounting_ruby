@@ -5,6 +5,7 @@ class Views::Budgets::Index < Views::Base
     revenue_budgets:,
     expenditure_budgets:,
     calendar_month:,
+    month_choices:,
     taxonomy:,
     initial_budget_kind: :revenue,
     revenue_carousel_initial_index: nil,
@@ -13,6 +14,7 @@ class Views::Budgets::Index < Views::Base
     @revenue_budgets = revenue_budgets
     @expenditure_budgets = expenditure_budgets
     @calendar_month = calendar_month
+    @month_choices = month_choices
     @taxonomy = taxonomy
     @initial_budget_kind = initial_budget_kind
     @revenue_carousel_initial_index = revenue_carousel_initial_index
@@ -214,16 +216,30 @@ class Views::Budgets::Index < Views::Base
   def budget_header_row
     page_header(
       title: "預算",
-      subtitle: "規劃本月收入與各類別支出預算"
-    )
+      subtitle: "規劃 #{calendar_month_label_for(@calendar_month)} 收入與各類別支出預算"
+    ) do
+      calendar_month_selector(
+        month_choices: @month_choices,
+        calendar_month: @calendar_month,
+        url: budgets_path,
+        select_id: "budget_header_calendar_month",
+        compact: true
+      )
+    end
   end
 
   def budget_month_summary_panel
-    section(class: MONTH_SUMMARY_SECTION_CLASS, aria: { label: "本月預算摘要" }) do
+    section(class: MONTH_SUMMARY_SECTION_CLASS, aria: { label: "預算月份摘要" }) do
       div(class: MONTH_SUMMARY_HEADER_CLASS) do
         div(class: "flex flex-col gap-0.5 sm:flex-row sm:items-baseline sm:justify-between") do
-          h2(class: MONTH_SUMMARY_TITLE_CLASS) { "本月摘要" }
-          span(class: MONTH_SUMMARY_PERIOD_CLASS) { current_month_label }
+          h2(class: MONTH_SUMMARY_TITLE_CLASS) { "#{calendar_month_label_for(@calendar_month)}摘要" }
+          calendar_month_selector(
+            month_choices: @month_choices,
+            calendar_month: @calendar_month,
+            url: budgets_path,
+            select_id: "budget_summary_calendar_month",
+            compact: true
+          )
         end
       end
       div(class: MONTH_SUMMARY_BODY_CLASS) do
@@ -299,6 +315,7 @@ class Views::Budgets::Index < Views::Base
           data: auto_save_data
         ) do
           revenue_slide_header(
+            suffix: suffix,
             saved_index: saved_index,
             saved_count: saved_count,
             delete_path: record ? delete_budget_revenue_budget_path(record) : nil,
@@ -313,6 +330,7 @@ class Views::Budgets::Index < Views::Base
             data: { budget_auto_save_target: "budgetForm" }
           ) do
             input(type: "hidden", name: "authenticity_token", value: view_context.form_authenticity_token)
+            budget_form_ym_hidden
             if record
               input(type: "hidden", name: "_method", value: "patch")
             end
@@ -358,7 +376,7 @@ class Views::Budgets::Index < Views::Base
     end
   end
 
-  def revenue_slide_header(saved_index:, saved_count:, delete_path: nil, unsaved_delete: false)
+  def revenue_slide_header(suffix:, saved_index:, saved_count:, delete_path: nil, unsaved_delete: false)
     div(class: "px-0 pb-2 pt-0 sm:pb-3") do
       div(class: "flex flex-row items-start justify-between gap-2") do
         p(class: "mb-0 min-w-0 flex-1 text-[11px] font-medium tabular-nums text-muted-foreground sm:text-xs") do
@@ -388,6 +406,7 @@ class Views::Budgets::Index < Views::Base
               form(method: "post", action: delete_path, class: "inline-flex shrink-0 items-center") do
                 input(type: "hidden", name: "authenticity_token", value: view_context.form_authenticity_token)
                 input(type: "hidden", name: "_method", value: "delete")
+                budget_form_ym_hidden
                 Button(
                   type: :submit,
                   variant: :destructive,
@@ -401,15 +420,7 @@ class Views::Budgets::Index < Views::Base
         end
       end
 
-      div(class: "mt-2 flex flex-row items-start justify-between gap-3") do
-        span(class: [ budget_month_label_class, "min-w-0 flex-1 pr-2" ].join(" ")) do
-          current_month_label
-        end
-        time(
-          class: "shrink-0 text-xs tabular-nums text-muted-foreground sm:text-[13px]",
-          data: { controller: "local-clock" }
-        )
-      end
+      budget_slide_month_row
     end
   end
 
@@ -446,6 +457,7 @@ class Views::Budgets::Index < Views::Base
           data: auto_save_data
         ) do
           expenditure_slide_header(
+            suffix: suffix,
             saved_index: saved_index,
             saved_count: saved_count,
             delete_path: record ? delete_budget_expenditure_budget_path(record) : nil,
@@ -460,6 +472,7 @@ class Views::Budgets::Index < Views::Base
             data: { budget_auto_save_target: "budgetForm" }
           ) do
             input(type: "hidden", name: "authenticity_token", value: view_context.form_authenticity_token)
+            budget_form_ym_hidden
             if record
               input(type: "hidden", name: "_method", value: "patch")
             end
@@ -516,7 +529,7 @@ class Views::Budgets::Index < Views::Base
     end
   end
 
-  def expenditure_slide_header(saved_index:, saved_count:, delete_path: nil, unsaved_delete: false)
+  def expenditure_slide_header(suffix:, saved_index:, saved_count:, delete_path: nil, unsaved_delete: false)
     div(class: "px-0 pb-2 pt-0 sm:pb-3") do
       div(class: "flex flex-row items-start justify-between gap-2") do
         p(class: "mb-0 min-w-0 flex-1 text-[11px] font-medium tabular-nums text-muted-foreground sm:text-xs") do
@@ -546,6 +559,7 @@ class Views::Budgets::Index < Views::Base
               form(method: "post", action: delete_path, class: "inline-flex shrink-0 items-center") do
                 input(type: "hidden", name: "authenticity_token", value: view_context.form_authenticity_token)
                 input(type: "hidden", name: "_method", value: "delete")
+                budget_form_ym_hidden
                 Button(
                   type: :submit,
                   variant: :destructive,
@@ -559,15 +573,7 @@ class Views::Budgets::Index < Views::Base
         end
       end
 
-      div(class: "mt-2 flex flex-row items-start justify-between gap-3") do
-        span(class: [ budget_month_label_class, "min-w-0 flex-1 pr-2" ].join(" ")) do
-          current_month_label
-        end
-        time(
-          class: "shrink-0 text-xs tabular-nums text-muted-foreground sm:text-[13px]",
-          data: { controller: "local-clock" }
-        )
-      end
+      budget_slide_month_row
     end
   end
 
@@ -625,12 +631,24 @@ class Views::Budgets::Index < Views::Base
     end
   end
 
-  def budget_month_label_class
-    "block text-xs tabular-nums text-muted-foreground sm:text-[13px]"
+  def budget_slide_month_row
+    div(class: "mt-2 flex flex-row items-start justify-between gap-3") do
+      span(class: [ budget_month_label_class, "min-w-0 flex-1 pr-2" ].join(" ")) do
+        calendar_month_label_for(@calendar_month)
+      end
+      time(
+        class: "shrink-0 text-xs tabular-nums text-muted-foreground sm:text-[13px]",
+        data: { controller: "local-clock" }
+      )
+    end
   end
 
-  def current_month_label
-    calendar_month_label_for(@calendar_month)
+  def budget_form_ym_hidden
+    input(type: "hidden", name: "ym", value: calendar_month_ym_for(@calendar_month))
+  end
+
+  def budget_month_label_class
+    "block text-xs tabular-nums text-muted-foreground sm:text-[13px]"
   end
 
   def format_decimal(amount)
