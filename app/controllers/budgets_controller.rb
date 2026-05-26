@@ -17,6 +17,7 @@ class BudgetsController < ApplicationController
 
     revenue_budgets, expenditure_budgets, calendar_month = budget_index_state_for(@user)
     month_choices = calendar_month_choices_for(@user, selected: calendar_month)
+    planning_calendar_month = CalendarMonth.ensure_next_month_exists!
     focus = carousel_focus_from_params(revenue_budgets, expenditure_budgets)
 
     taxonomy = ExpenditureTaxonomy.for_user(@user)
@@ -27,6 +28,7 @@ class BudgetsController < ApplicationController
       expenditure_budgets: expenditure_budgets,
       calendar_month: calendar_month,
       month_choices: month_choices,
+      planning_calendar_month: planning_calendar_month,
       initial_budget_kind: focus.fetch(:kind),
       revenue_carousel_initial_index: focus[:revenue_index],
       expenditure_carousel_initial_index: focus[:expenditure_index],

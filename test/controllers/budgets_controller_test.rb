@@ -13,6 +13,8 @@ class BudgetsControllerTest < ActionDispatch::IntegrationTest
       get budgets_path
       assert_response :success
       assert_includes response.body, 'value="2026-06"'
+      assert_includes response.body, "2026 年 6 月（下月）"
+      assert_includes response.body, "可選"
       assert CalendarMonth.exists?(year: 2026, month: 6)
     end
   end
