@@ -21,7 +21,9 @@ class BudgetsControllerTest < ActionDispatch::IntegrationTest
       get budgets_path(ym: "2026-04")
       assert_response :success
       assert_includes response.body, "calendar-month-select"
+      assert_includes response.body, "budget_header_calendar_month"
       assert_includes response.body, "四月薪水"
+      assert_includes response.body, "2026 年 4 月摘要"
       assert_includes response.body, 'value="2026-04"'
     end
   end

@@ -20,13 +20,7 @@ class Views::Dashboard::History < Views::Base
       }
     ) do
       history_header
-
-      if @actual_expenditures.empty?
-        empty_state
-      else
-        expenditures_list
-      end
-
+      history_records_section
       edit_modal
     end
   end
@@ -39,24 +33,7 @@ class Views::Dashboard::History < Views::Base
     end
   end
 
-  def empty_state
-    section(class: "#{CARD_SECTION_CLASS} overflow-hidden", aria: { label: "實際支出列表" }) do
-      div(class: "flex flex-col items-center px-6 py-14 text-center sm:py-16") do
-        div(class: "mb-4 flex size-14 items-center justify-center rounded-full bg-muted/60 text-muted-foreground") do
-          empty_icon
-        end
-        p(class: "text-base font-semibold text-foreground") { "尚無歷史紀錄" }
-        p(class: "mt-2 max-w-sm text-sm text-muted-foreground") do
-          "在實際支出頁登錄第一筆支出後，會顯示在這裡。"
-        end
-        div(class: "mt-6") do
-          Link(href: root_path, variant: :primary, size: :md) { "前往登錄支出" }
-        end
-      end
-    end
-  end
-
-  def expenditures_list
+  def history_records_section
     section(class: "#{CARD_SECTION_CLASS} overflow-hidden", aria: { label: "實際支出列表" }) do
       div(class: MONTH_SUMMARY_HEADER_CLASS) do
         div(class: "flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between") do
@@ -71,9 +48,36 @@ class Views::Dashboard::History < Views::Base
           )
         end
       end
-      ul(class: "divide-y divide-border/60", role: "list") do
-        @actual_expenditures.each do |expenditure|
-          history_list_item(expenditure)
+
+      if @actual_expenditures.empty?
+        empty_list_body
+      else
+        ul(class: "divide-y divide-border/60", role: "list") do
+          @actual_expenditures.each do |expenditure|
+            history_list_item(expenditure)
+          end
+        end
+      end
+    end
+  end
+
+  def empty_list_body
+    div(class: "flex flex-col items-center px-6 py-14 text-center sm:py-16") do
+      div(class: "mb-4 flex size-14 items-center justify-center rounded-full bg-muted/60 text-muted-foreground") do
+        empty_icon
+      end
+      if @month_filter
+        p(class: "text-base font-semibold text-foreground") { "此月份尚無紀錄" }
+        p(class: "mt-2 max-w-sm text-sm text-muted-foreground") do
+          "可改選其他月份，或選擇「全部月份」瀏覽所有支出。"
+        end
+      else
+        p(class: "text-base font-semibold text-foreground") { "尚無歷史紀錄" }
+        p(class: "mt-2 max-w-sm text-sm text-muted-foreground") do
+          "在實際支出頁登錄第一筆支出後，會顯示在這裡。"
+        end
+        div(class: "mt-6") do
+          Link(href: root_path, variant: :primary, size: :md) { "前往登錄支出" }
         end
       end
     end

@@ -216,15 +216,23 @@ class Views::Budgets::Index < Views::Base
   def budget_header_row
     page_header(
       title: "預算",
-      subtitle: "規劃本月收入與各類別支出預算"
-    )
+      subtitle: "規劃 #{calendar_month_label_for(@calendar_month)} 收入與各類別支出預算"
+    ) do
+      calendar_month_selector(
+        month_choices: @month_choices,
+        calendar_month: @calendar_month,
+        url: budgets_path,
+        select_id: "budget_header_calendar_month",
+        compact: true
+      )
+    end
   end
 
   def budget_month_summary_panel
-    section(class: MONTH_SUMMARY_SECTION_CLASS, aria: { label: "本月預算摘要" }) do
+    section(class: MONTH_SUMMARY_SECTION_CLASS, aria: { label: "預算月份摘要" }) do
       div(class: MONTH_SUMMARY_HEADER_CLASS) do
         div(class: "flex flex-col gap-0.5 sm:flex-row sm:items-baseline sm:justify-between") do
-          h2(class: MONTH_SUMMARY_TITLE_CLASS) { "月份摘要" }
+          h2(class: MONTH_SUMMARY_TITLE_CLASS) { "#{calendar_month_label_for(@calendar_month)}摘要" }
           calendar_month_selector(
             month_choices: @month_choices,
             calendar_month: @calendar_month,
@@ -412,7 +420,7 @@ class Views::Budgets::Index < Views::Base
         end
       end
 
-      budget_slide_month_row(select_id: "budget_revenue_calendar_month_#{suffix}")
+      budget_slide_month_row
     end
   end
 
@@ -565,7 +573,7 @@ class Views::Budgets::Index < Views::Base
         end
       end
 
-      budget_slide_month_row(select_id: "budget_expenditure_calendar_month_#{suffix}")
+      budget_slide_month_row
     end
   end
 
@@ -623,15 +631,11 @@ class Views::Budgets::Index < Views::Base
     end
   end
 
-  def budget_slide_month_row(select_id:)
+  def budget_slide_month_row
     div(class: "mt-2 flex flex-row items-start justify-between gap-3") do
-      calendar_month_selector(
-        month_choices: @month_choices,
-        calendar_month: @calendar_month,
-        url: budgets_path,
-        select_id: select_id,
-        compact: true
-      )
+      span(class: [ budget_month_label_class, "min-w-0 flex-1 pr-2" ].join(" ")) do
+        calendar_month_label_for(@calendar_month)
+      end
       time(
         class: "shrink-0 text-xs tabular-nums text-muted-foreground sm:text-[13px]",
         data: { controller: "local-clock" }
@@ -641,6 +645,10 @@ class Views::Budgets::Index < Views::Base
 
   def budget_form_ym_hidden
     input(type: "hidden", name: "ym", value: calendar_month_ym_for(@calendar_month))
+  end
+
+  def budget_month_label_class
+    "block text-xs tabular-nums text-muted-foreground sm:text-[13px]"
   end
 
   def format_decimal(amount)

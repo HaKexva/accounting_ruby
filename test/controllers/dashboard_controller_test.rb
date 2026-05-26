@@ -93,6 +93,17 @@ class DashboardControllerTest < ActionDispatch::IntegrationTest
     end
   end
 
+  test "history with ym and no matching records still shows month filter" do
+    travel_to Time.zone.local(2026, 5, 15, 12, 0, 0) do
+      get expense_history_path(ym: "2026-03")
+      assert_response :success
+      assert_includes response.body, "history_calendar_month"
+      assert_includes response.body, "calendar-month-select"
+      assert_includes response.body, "此月份尚無紀錄"
+      assert_includes response.body, "2026 年 3 月紀錄"
+    end
+  end
+
   test "history includes edit and delete controls" do
     get expense_history_path
     assert_response :success
