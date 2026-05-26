@@ -1,0 +1,15 @@
+name: Install Ruby with mise
+description: Install Ruby from .ruby-version when ruby/setup-ruby cannot be downloaded
+
+runs:
+  using: composite
+  steps:
+    - name: Install mise and Ruby
+      shell: bash
+      run: |
+        curl -fsSL https://mise.run | sh
+        echo "$HOME/.local/bin/mise" >> "$GITHUB_PATH"
+        echo "$HOME/.local/share/mise/shims" >> "$GITHUB_PATH"
+        mise install
+        ruby -v
+        bundle -v
