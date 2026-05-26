@@ -8,6 +8,15 @@ class BudgetsControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
   end
 
+  test "index includes next month in selector for early budget entry" do
+    travel_to Time.zone.local(2026, 5, 15, 12, 0, 0) do
+      get budgets_path
+      assert_response :success
+      assert_includes response.body, 'value="2026-06"'
+      assert CalendarMonth.exists?(year: 2026, month: 6)
+    end
+  end
+
   test "index includes month selector and ym loads selected month" do
     travel_to Time.zone.local(2026, 5, 15, 12, 0, 0) do
       april = CalendarMonth.create!(year: 2026, month: 4)
@@ -21,7 +30,7 @@ class BudgetsControllerTest < ActionDispatch::IntegrationTest
       get budgets_path(ym: "2026-04")
       assert_response :success
       assert_includes response.body, "calendar-month-select"
-      assert_includes response.body, "budget_header_calendar_month"
+      assert_includes response.body, "budget_summary_calendar_month"
       assert_includes response.body, "四月薪水"
       assert_includes response.body, "2026 年 4 月摘要"
       assert_includes response.body, 'value="2026-04"'

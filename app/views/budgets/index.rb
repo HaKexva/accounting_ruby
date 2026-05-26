@@ -217,15 +217,7 @@ class Views::Budgets::Index < Views::Base
     page_header(
       title: "預算",
       subtitle: "規劃 #{calendar_month_label_for(@calendar_month)} 收入與各類別支出預算"
-    ) do
-      calendar_month_selector(
-        month_choices: @month_choices,
-        calendar_month: @calendar_month,
-        url: budgets_path,
-        select_id: "budget_header_calendar_month",
-        compact: true
-      )
-    end
+    )
   end
 
   def budget_month_summary_panel
