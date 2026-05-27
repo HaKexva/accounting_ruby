@@ -31,4 +31,18 @@ class CalendarMonthTest < ActiveSupport::TestCase
       assert_equal 1, january.month
     end
   end
+
+  test "on_or_before_planning_horizon rejects months after today plus one" do
+    travel_to Time.zone.local(2026, 5, 15, 12, 0, 0) do
+      assert CalendarMonth.on_or_before_planning_horizon?(2026, 6)
+      refute CalendarMonth.on_or_before_planning_horizon?(2026, 7)
+    end
+  end
+
+  test "on_or_before_planning_horizon allows January after December" do
+    travel_to Time.zone.local(2026, 12, 10, 12, 0, 0) do
+      assert CalendarMonth.on_or_before_planning_horizon?(2027, 1)
+      refute CalendarMonth.on_or_before_planning_horizon?(2027, 2)
+    end
+  end
 end

@@ -22,31 +22,52 @@ module CalendarMonthResolution
     parsed ||= parse_year_month_params(params[:year], params[:month])
     if parsed
       year, month = parsed
-      return CalendarMonth.find_or_create_by!(year: year, month: month) if month.between?(1, 12)
+      if month.between?(1, 12) && within_planning_horizon?(year, month, reference_date: default_date)
+        return CalendarMonth.for_year_month!(year, month)
+      elsif month.between?(1, 12)
+        horizon = planning_horizon_month(reference_date: default_date)
+        return horizon
+      end
     end
 
-    CalendarMonth.find_or_create_by!(year: default_date.year, month: default_date.month)
+    CalendarMonth.for_year_month!(default_date.year, default_date.month)
   end
 
   def calendar_month_choices_for(user, selected:)
     today = Time.zone.today
     current = CalendarMonth.for_year_month!(today.year, today.month)
-    planning_month = CalendarMonth.ensure_next_month_exists!(reference_date: today)
+    horizon = planning_horizon_month(reference_date: today)
     selected ||= current
-    next_after_selected = CalendarMonth.ensure_next_month_exists!(
-      reference_date: Date.new(selected.year, selected.month, 1)
-    )
+    selected = horizon if month_after?(selected, horizon)
 
-    anchor_months = [ current, planning_month, selected, next_after_selected ].uniq
+    anchor_months = [ current, horizon, selected ].uniq
 
-    return anchor_months unless user
+    months =
+      if user
+        ids = anchor_months.map(&:id)
+        ids.concat(ActualExpenditure.where(user: user).distinct.pluck(:calendar_month_id))
+        ids.concat(ExpenditureBudget.where(user: user).distinct.pluck(:calendar_month_id))
+        ids.concat(RevenueBudget.where(user: user).distinct.pluck(:calendar_month_id))
 
-    ids = anchor_months.map(&:id)
-    ids.concat(ActualExpenditure.where(user: user).distinct.pluck(:calendar_month_id))
-    ids.concat(ExpenditureBudget.where(user: user).distinct.pluck(:calendar_month_id))
-    ids.concat(RevenueBudget.where(user: user).distinct.pluck(:calendar_month_id))
+        CalendarMonth.where(id: ids.compact.uniq).order(year: :desc, month: :desc).to_a
+      else
+        anchor_months
+      end
 
-    CalendarMonth.where(id: ids.compact.uniq).order(year: :desc, month: :desc).to_a
+    months.reject { |cm| month_after?(cm, horizon) }
+  end
+
+  def planning_horizon_month(reference_date: Time.zone.today)
+    CalendarMonth.planning_horizon_month(reference_date: reference_date)
+  end
+
+  def within_planning_horizon?(year, month, reference_date: Time.zone.today)
+    CalendarMonth.on_or_before_planning_horizon?(year, month, reference_date: reference_date)
+  end
+
+  def month_after?(calendar_month, horizon)
+    calendar_month.year > horizon.year ||
+      (calendar_month.year == horizon.year && calendar_month.month > horizon.month)
   end
 
   def calendar_month_ym(calendar_month)
