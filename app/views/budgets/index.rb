@@ -6,7 +6,6 @@ class Views::Budgets::Index < Views::Base
     expenditure_budgets:,
     calendar_month:,
     month_choices:,
-    planning_calendar_month:,
     taxonomy:,
     initial_budget_kind: :revenue,
     revenue_carousel_initial_index: nil,
@@ -16,7 +15,6 @@ class Views::Budgets::Index < Views::Base
     @expenditure_budgets = expenditure_budgets
     @calendar_month = calendar_month
     @month_choices = month_choices
-    @planning_calendar_month = planning_calendar_month
     @taxonomy = taxonomy
     @initial_budget_kind = initial_budget_kind
     @revenue_carousel_initial_index = revenue_carousel_initial_index
@@ -143,7 +141,7 @@ class Views::Budgets::Index < Views::Base
   end
 
   def budget_deck_wrapper(&)
-    div(class: "relative w-full") do
+    div(class: "relative w-full", data: { controller: "budget-carousel-nav" }) do
       div(
         class: [
           "overflow-hidden rounded-xl border bg-card text-card-foreground",
@@ -152,6 +150,28 @@ class Views::Budgets::Index < Views::Base
       ) do
         yield
       end
+      budget_carousel_mobile_nav
+    end
+  end
+
+  def budget_carousel_mobile_nav
+    div(class: "mt-3 flex items-center justify-between gap-2 lg:hidden") do
+      Button(
+        type: :button,
+        variant: :outline,
+        size: :sm,
+        data: { action: "click->budget-carousel-nav#prev" }
+      ) { "上一筆" }
+      p(
+        class: "min-w-[5.5rem] text-center text-xs font-medium tabular-nums text-muted-foreground",
+        data: { budget_carousel_nav_target: "status" }
+      ) { plain "" }
+      Button(
+        type: :button,
+        variant: :outline,
+        size: :sm,
+        data: { action: "click->budget-carousel-nav#next" }
+      ) { "下一筆" }
     end
   end
 
@@ -159,7 +179,7 @@ class Views::Budgets::Index < Views::Base
     div(class: "space-y-0.5 scroll-mt-6 sm:scroll-mt-8") do
       h2(class: "text-lg font-semibold tracking-tight text-foreground sm:text-xl") { "填寫預算" }
       p(class: "max-w-prose text-sm leading-snug text-muted-foreground") do
-        plain "此處為主要操作區：編輯欄位後會自動儲存，卡片右上角可刪除該筆。"
+        plain "新增預算：填完後點到表單外會自動儲存；已登錄的預算則在編輯時自動儲存。可用「上一筆／下一筆」或左右滑動切換。"
       end
     end
   end
@@ -227,19 +247,13 @@ class Views::Budgets::Index < Views::Base
       div(class: MONTH_SUMMARY_HEADER_CLASS) do
         div(class: "flex flex-col gap-1 sm:flex-row sm:items-baseline sm:justify-between") do
           h2(class: MONTH_SUMMARY_TITLE_CLASS) { "#{calendar_month_label_for(@calendar_month)}摘要" }
-          div(class: "flex flex-col gap-0.5") do
-            calendar_month_selector(
-              month_choices: @month_choices,
-              calendar_month: @calendar_month,
-              url: budgets_path,
-              select_id: "budget_summary_calendar_month",
-              planning_calendar_month: @planning_calendar_month,
-              compact: true
-            )
-            p(class: "text-[11px] leading-snug text-muted-foreground sm:text-xs") do
-              plain "可選「#{calendar_month_label_for(@planning_calendar_month)}（下月）」提前規劃"
-            end
-          end
+          calendar_month_selector(
+            month_choices: @month_choices,
+            calendar_month: @calendar_month,
+            url: budgets_path,
+            select_id: "budget_summary_calendar_month",
+            compact: true
+          )
         end
       end
       div(class: MONTH_SUMMARY_BODY_CLASS) do
@@ -296,10 +310,13 @@ class Views::Budgets::Index < Views::Base
 
     auto_save_data = {
       controller: "budget-auto-save",
-      action: "input->budget-auto-save#scheduleSave change->budget-auto-save#scheduleSave",
       budget_auto_save_member_prefix_value: revenue_budget_member_prefix
     }
-    auto_save_data[:budget_auto_save_record_id_value] = record.id if record
+    if record
+      auto_save_data[:budget_auto_save_record_id_value] = record.id
+      auto_save_data[:action] =
+        "input->budget-auto-save#scheduleSave change->budget-auto-save#scheduleSave"
+    end
 
     section(
       class: [
@@ -438,10 +455,13 @@ class Views::Budgets::Index < Views::Base
 
     auto_save_data = {
       controller: "budget-auto-save",
-      action: "input->budget-auto-save#scheduleSave change->budget-auto-save#scheduleSave",
       budget_auto_save_member_prefix_value: expenditure_budget_member_prefix
     }
-    auto_save_data[:budget_auto_save_record_id_value] = record.id if record
+    if record
+      auto_save_data[:budget_auto_save_record_id_value] = record.id
+      auto_save_data[:action] =
+        "input->budget-auto-save#scheduleSave change->budget-auto-save#scheduleSave"
+    end
 
     section(
       class: [

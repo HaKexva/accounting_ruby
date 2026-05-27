@@ -6,6 +6,7 @@ export default class extends Controller {
   static values = {
     memberPrefix: String,
     debounce: { type: Number, default: 650 },
+    newRecordDebounce: { type: Number, default: 1800 },
     discardConfirm: { type: String, default: "確定捨棄尚未儲存的內容？" },
     recordId: Number,
   };
@@ -14,11 +15,31 @@ export default class extends Controller {
     this._timer = null;
     this._saving = false;
     this.initialSnapshot = this.#snapshot(this.budgetFormTarget);
+    this._onFormFocusOut = (event) => this.#saveOnFormFocusOut(event);
+    if (this.#isNewRecord()) {
+      this.budgetFormTarget.addEventListener("focusout", this._onFormFocusOut);
+    }
+  }
+
+  disconnect() {
+    if (this.#isNewRecord()) {
+      this.budgetFormTarget.removeEventListener("focusout", this._onFormFocusOut);
+    }
   }
 
   scheduleSave() {
+    if (this.#isNewRecord()) return;
+
     clearTimeout(this._timer);
     this._timer = setTimeout(() => this.save(), this.debounceValue);
+  }
+
+  #saveOnFormFocusOut(event) {
+    if (!this.#isNewRecord()) return;
+    if (this.budgetFormTarget.contains(event.relatedTarget)) return;
+
+    clearTimeout(this._timer);
+    this._timer = setTimeout(() => this.save(), 400);
   }
 
   discardUnsaved(event) {
@@ -172,9 +193,11 @@ export default class extends Controller {
 
     embla.reInit();
     requestAnimationFrame(() => {
-      const snaps = embla.scrollSnapList();
-      const last = Math.max(0, snaps.length - 1);
-      carouselCtrl.scrollToIndex(last);
+      const slides = embla.slideNodes();
+      const index = slides.indexOf(slideEl);
+      if (index >= 0) {
+        carouselCtrl.scrollToIndex(index);
+      }
     });
   }
 
