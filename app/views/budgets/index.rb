@@ -259,7 +259,7 @@ class Views::Budgets::Index < Views::Base
     div(class: "space-y-0.5 scroll-mt-6 pb-1 sm:scroll-mt-8") do
       h2(class: "text-lg font-semibold tracking-tight text-foreground sm:text-xl") { "填寫預算" }
       p(class: "max-w-prose text-sm leading-snug text-muted-foreground") do
-        plain "手機請填完後按「儲存」；電腦版編輯時會自動儲存。可用左右箭頭或「上一筆／下一筆」切換。"
+        plain "填完後按「儲存」。可用左右箭頭或「上一筆／下一筆」切換。"
       end
     end
   end
@@ -372,7 +372,7 @@ class Views::Budgets::Index < Views::Base
         "leading-relaxed text-muted-foreground sm:mt-5 sm:py-3 sm:text-xs"
       ].join(" ")
     ) do
-      plain "手機版請按「儲存」；電腦版編輯時會自動儲存。卡片右上角可刪除該筆。"
+      plain "填完後請按「儲存」。卡片右上角可刪除該筆。"
     end
   end
 
@@ -392,11 +392,7 @@ class Views::Budgets::Index < Views::Base
       controller: "budget-auto-save",
       budget_auto_save_member_prefix_value: revenue_budget_member_prefix
     }
-    if record
-      auto_save_data[:budget_auto_save_record_id_value] = record.id
-      auto_save_data[:action] =
-        "input->budget-auto-save#scheduleSave change->budget-auto-save#scheduleSave"
-    end
+    auto_save_data[:budget_auto_save_record_id_value] = record.id if record
 
     section(
       class: [
@@ -534,11 +530,7 @@ class Views::Budgets::Index < Views::Base
       controller: "budget-auto-save",
       budget_auto_save_member_prefix_value: expenditure_budget_member_prefix
     }
-    if record
-      auto_save_data[:budget_auto_save_record_id_value] = record.id
-      auto_save_data[:action] =
-        "input->budget-auto-save#scheduleSave change->budget-auto-save#scheduleSave"
-    end
+    auto_save_data[:budget_auto_save_record_id_value] = record.id if record
 
     section(
       class: [
@@ -701,7 +693,7 @@ class Views::Budgets::Index < Views::Base
         type: :button,
         variant: :primary,
         size: :md,
-        class: "w-full lg:hidden",
+        class: "w-full",
         data: {
           budget_auto_save_target: "saveButton",
           action: "click->budget-auto-save#saveFromButton"

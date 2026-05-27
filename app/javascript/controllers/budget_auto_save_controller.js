@@ -1,52 +1,17 @@
 import { Controller } from "@hotwired/stimulus";
 
-/** Debounced auto-save for budget cards on desktop; manual save on mobile. */
+/** Manual save for budget cards (no autosave). */
 export default class extends Controller {
   static targets = ["budgetForm", "status", "deleteSlot", "discardButton", "saveButton"];
   static values = {
     memberPrefix: String,
-    debounce: { type: Number, default: 650 },
     discardConfirm: { type: String, default: "確定捨棄尚未儲存的內容？" },
     recordId: Number,
   };
 
-  #mq = null;
-
   connect() {
-    this._timer = null;
     this._saving = false;
-    this.#mq = window.matchMedia("(max-width: 1023px)");
     this.initialSnapshot = this.#snapshot(this.budgetFormTarget);
-    this._onFormFocusOut = (event) => this.#saveOnFormFocusOut(event);
-    this._onMqChange = () => this.#syncFocusOutListener();
-    this.#syncFocusOutListener();
-    this.#mq.addEventListener("change", this._onMqChange);
-  }
-
-  disconnect() {
-    this.#mq?.removeEventListener("change", this._onMqChange);
-    this.budgetFormTarget.removeEventListener("focusout", this._onFormFocusOut);
-  }
-
-  scheduleSave() {
-    if (this.#isMobile() || this.#isNewRecord()) return;
-
-    clearTimeout(this._timer);
-    this._timer = setTimeout(() => this.save(), this.debounceValue);
-  }
-
-  saveFromButton(event) {
-    event.preventDefault();
-    clearTimeout(this._timer);
-    this.save();
-  }
-
-  #saveOnFormFocusOut(event) {
-    if (this.#isMobile() || !this.#isNewRecord()) return;
-    if (this.budgetFormTarget.contains(event.relatedTarget)) return;
-
-    clearTimeout(this._timer);
-    this._timer = setTimeout(() => this.save(), 400);
   }
 
   discardUnsaved(event) {
@@ -57,6 +22,11 @@ export default class extends Controller {
     this.budgetFormTarget.reset();
     this.initialSnapshot = this.#snapshot(this.budgetFormTarget);
     this.#setStatus("");
+  }
+
+  saveFromButton(event) {
+    event.preventDefault();
+    this.save();
   }
 
   async save() {
@@ -115,7 +85,7 @@ export default class extends Controller {
       }
 
       this.initialSnapshot = this.#snapshot(form);
-      this.#setStatus(this.#isMobile() ? "已儲存" : "已自動儲存");
+      this.#setStatus("已儲存");
       window.setTimeout(() => {
         if (this.#snapshot(form) === this.initialSnapshot) this.#setStatus("");
       }, 2000);
@@ -124,19 +94,6 @@ export default class extends Controller {
     } finally {
       this._saving = false;
     }
-  }
-
-  #isMobile() {
-    return this.#mq?.matches ?? false;
-  }
-
-  #syncFocusOutListener() {
-    if (this.#isMobile() || !this.#isNewRecord()) {
-      this.budgetFormTarget.removeEventListener("focusout", this._onFormFocusOut);
-      return;
-    }
-
-    this.budgetFormTarget.addEventListener("focusout", this._onFormFocusOut);
   }
 
   #isNewRecord() {
@@ -240,12 +197,7 @@ export default class extends Controller {
       this.discardButtonTarget.remove();
     }
 
-    if (this.hasSaveButtonTarget) {
-      this.saveButtonTarget.classList.add("lg:hidden");
-    }
-
     this.#appendDeleteForm(id);
-    this.#syncFocusOutListener();
   }
 
   #appendDeleteForm(id) {
