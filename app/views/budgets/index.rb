@@ -161,14 +161,13 @@ class Views::Budgets::Index < Views::Base
   def budget_left_panel_class
     [
       PAGE_SPLIT_LEFT_STICKY_CLASS,
-      "max-lg:static max-lg:max-h-none max-lg:overflow-visible",
       "max-lg:border-b max-lg:border-border/60 max-lg:pb-4"
     ].join(" ")
   end
 
   def budget_summary_scroll_class
     [
-      "max-lg:overflow-visible",
+      "max-lg:min-h-0 max-lg:flex-1 max-lg:overflow-y-auto max-lg:overscroll-contain",
       "lg:min-h-0 lg:flex-1 lg:overflow-y-auto lg:overscroll-contain lg:flex-none"
     ].join(" ")
   end
