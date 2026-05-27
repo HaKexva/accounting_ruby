@@ -10,6 +10,8 @@ export default class extends Controller {
     recordId: Number,
   };
 
+  #mq = null;
+
   connect() {
     this._timer = null;
     this._saving = false;
