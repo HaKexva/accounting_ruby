@@ -31,15 +31,15 @@ class Views::Budgets::Index < Views::Base
           budget_header_row
         end
 
-        div(class: PAGE_SPLIT_GRID_CLASS) do
-          div(class: PAGE_SPLIT_LEFT_STICKY_CLASS) do
+        div(class: budget_split_grid_class) do
+          div(class: budget_left_panel_class) do
             div(class: "shrink-0 lg:hidden") { budget_header_row }
-            div(class: "min-h-0 flex-1 overflow-y-auto overscroll-contain lg:overflow-visible lg:flex-none") do
+            div(class: budget_summary_scroll_class) do
               budget_month_summary_panel
             end
           end
 
-          div(class: PAGE_SPLIT_RIGHT_BODY_CLASS) do
+          div(class: budget_right_panel_class) do
             budget_main_editor_section_intro
 
             div(class: "w-full space-y-4", data: { controller: "budgets-kind" }) do
@@ -96,7 +96,6 @@ class Views::Budgets::Index < Views::Base
         ].join(" "),
         aria: { label: "收入預算：左右切換多筆資料" }
       ) do
-        CarouselPrevious
         CarouselContent do
           saved_total = @revenue_budgets.size
           slides.each_with_index do |record, idx|
@@ -106,7 +105,6 @@ class Views::Budgets::Index < Views::Base
             end
           end
         end
-        CarouselNext
       end
     end
   end
@@ -125,7 +123,6 @@ class Views::Budgets::Index < Views::Base
         ].join(" "),
         aria: { label: "支出預算：左右切換多筆資料" }
       ) do
-        CarouselPrevious
         CarouselContent do
           saved_total = @expenditure_budgets.size
           slides.each_with_index do |record, idx|
@@ -135,51 +132,134 @@ class Views::Budgets::Index < Views::Base
             end
           end
         end
-        CarouselNext
       end
     end
   end
 
   def budget_deck_wrapper(&)
-    div(class: "relative w-full", data: { controller: "budget-carousel-nav" }) do
-      div(
-        class: [
-          "overflow-hidden rounded-xl border bg-card text-card-foreground",
-          "shadow-md ring-1 ring-border/50 ring-offset-1 ring-offset-background"
-        ].join(" ")
-      ) do
-        yield
+    div(class: "relative w-full space-y-3", data: { controller: "budget-carousel-nav" }) do
+      div(class: "flex items-stretch gap-2 lg:gap-3") do
+        budget_carousel_nav_button(:prev, variant: :side)
+        div(
+          class: [
+            "min-w-0 flex-1 overflow-hidden rounded-xl border bg-card text-card-foreground",
+            "shadow-md ring-1 ring-border/50 ring-offset-1 ring-offset-background"
+          ].join(" ")
+        ) do
+          yield
+        end
+        budget_carousel_nav_button(:next, variant: :side)
       end
-      budget_carousel_mobile_nav
+      budget_carousel_nav_bar
     end
   end
 
-  def budget_carousel_mobile_nav
-    div(class: "mt-3 flex items-center justify-between gap-2 lg:hidden") do
-      Button(
-        type: :button,
-        variant: :outline,
-        size: :sm,
-        data: { action: "click->budget-carousel-nav#prev" }
-      ) { "上一筆" }
+  def budget_split_grid_class
+    [ PAGE_SPLIT_GRID_CLASS, "max-lg:gap-6" ].join(" ")
+  end
+
+  def budget_left_panel_class
+    [
+      PAGE_SPLIT_LEFT_STICKY_CLASS,
+      "max-lg:static max-lg:max-h-none max-lg:overflow-visible",
+      "max-lg:border-b max-lg:border-border/60 max-lg:pb-4"
+    ].join(" ")
+  end
+
+  def budget_summary_scroll_class
+    [
+      "max-lg:overflow-visible",
+      "lg:min-h-0 lg:flex-1 lg:overflow-y-auto lg:overscroll-contain lg:flex-none"
+    ].join(" ")
+  end
+
+  def budget_right_panel_class
+    [
+      PAGE_SPLIT_RIGHT_BODY_CLASS,
+      "max-lg:!pt-4 max-lg:gap-5 max-lg:isolate"
+    ].join(" ")
+  end
+
+  def budget_carousel_nav_bar
+    div(class: "flex items-center justify-between gap-2 lg:justify-center lg:gap-4") do
+      budget_carousel_nav_button(:prev, variant: :bar)
       p(
-        class: "min-w-[5.5rem] text-center text-xs font-medium tabular-nums text-muted-foreground",
+        class: [
+          "min-w-[5.5rem] text-center text-xs font-medium tabular-nums text-muted-foreground",
+          "lg:text-sm"
+        ].join(" "),
         data: { budget_carousel_nav_target: "status" }
       ) { plain "" }
+      budget_carousel_nav_button(:next, variant: :bar)
+    end
+  end
+
+  def budget_carousel_nav_button(direction, variant:)
+    prev = direction == :prev
+    action = prev ? "click->budget-carousel-nav#prev" : "click->budget-carousel-nav#next"
+    label = prev ? "上一筆" : "下一筆"
+    aria = prev ? "上一張預算" : "下一張預算"
+
+    target = prev ? "prevButton" : "nextButton"
+
+    if variant == :side
+      Button(
+        type: :button,
+        variant: :outline,
+        size: :md,
+        class: [
+          "hidden shrink-0 self-center shadow-sm lg:inline-flex",
+          "size-10 p-0"
+        ].join(" "),
+        aria: { label: aria },
+        data: {
+          budget_carousel_nav_target: target,
+          action: action
+        }
+      ) do
+        budget_carousel_nav_icon(prev: prev)
+      end
+    else
       Button(
         type: :button,
         variant: :outline,
         size: :sm,
-        data: { action: "click->budget-carousel-nav#next" }
-      ) { "下一筆" }
+        class: "shrink-0 lg:hidden",
+        data: {
+          budget_carousel_nav_target: target,
+          action: action
+        }
+      ) { label }
+    end
+  end
+
+  def budget_carousel_nav_icon(prev:)
+    svg(
+      xmlns: "http://www.w3.org/2000/svg",
+      width: "20",
+      height: "20",
+      viewBox: "0 0 24 24",
+      fill: "none",
+      stroke: "currentColor",
+      stroke_width: "2",
+      stroke_linecap: "round",
+      stroke_linejoin: "round",
+      aria: { hidden: true },
+      class: "size-5"
+    ) do |s|
+      if prev
+        s.path(d: "m15 18-6-6 6-6")
+      else
+        s.path(d: "m9 18 6-6-6-6")
+      end
     end
   end
 
   def budget_main_editor_section_intro
-    div(class: "space-y-0.5 scroll-mt-6 sm:scroll-mt-8") do
+    div(class: "space-y-0.5 scroll-mt-6 pb-1 sm:scroll-mt-8") do
       h2(class: "text-lg font-semibold tracking-tight text-foreground sm:text-xl") { "填寫預算" }
       p(class: "max-w-prose text-sm leading-snug text-muted-foreground") do
-        plain "新增預算：填完後點到表單外會自動儲存；已登錄的預算則在編輯時自動儲存。可用「上一筆／下一筆」或左右滑動切換。"
+        plain "手機請填完後按「儲存」；電腦版編輯時會自動儲存。可用左右箭頭或「上一筆／下一筆」切換。"
       end
     end
   end
@@ -288,11 +368,11 @@ class Views::Budgets::Index < Views::Base
   def budget_footer_hint
     p(
       class: [
-        "mt-4 w-full rounded-xl border border-border/60 bg-muted/30 px-4 py-2.5 text-center text-[11px]",
+        "relative z-0 mt-6 w-full rounded-xl border border-border/60 bg-muted/30 px-4 py-2.5 text-center text-[11px]",
         "leading-relaxed text-muted-foreground sm:mt-5 sm:py-3 sm:text-xs"
       ].join(" ")
     ) do
-      plain "於「填寫預算」區編輯會自動儲存，卡片右上角可刪除該筆。"
+      plain "手機版請按「儲存」；電腦版編輯時會自動儲存。卡片右上角可刪除該筆。"
     end
   end
 
@@ -352,11 +432,6 @@ class Views::Budgets::Index < Views::Base
               input(type: "hidden", name: "_method", value: "patch")
             end
 
-            p(
-              class: "hidden text-[11px] tabular-nums text-muted-foreground",
-              data: { budget_auto_save_target: "status" }
-            ) { plain "" }
-
             div(class: "flex-1 space-y-5 sm:space-y-6") do
               budget_field_row(label: "項目：", id: "revenue_budget_item_#{suffix}") do
                 budget_single_line_text_input(
@@ -387,6 +462,8 @@ class Views::Budgets::Index < Views::Base
                 ) { record&.note.to_s }
               end
             end
+
+            budget_save_footer
           end
         end
       end
@@ -497,11 +574,6 @@ class Views::Budgets::Index < Views::Base
               input(type: "hidden", name: "_method", value: "patch")
             end
 
-            p(
-              class: "hidden text-[11px] tabular-nums text-muted-foreground",
-              data: { budget_auto_save_target: "status" }
-            ) { plain "" }
-
             div(class: "flex-1 space-y-5 sm:space-y-6") do
               budget_field_row(label: "項目：", id: "expenditure_budget_item_#{suffix}") do
                 budget_single_line_text_input(
@@ -543,6 +615,8 @@ class Views::Budgets::Index < Views::Base
                 ) { record&.note.to_s }
               end
             end
+
+            budget_save_footer
           end
         end
       end
@@ -610,6 +684,29 @@ class Views::Budgets::Index < Views::Base
       @taxonomy.categories.each do |cat|
         NativeSelectOption(value: cat, selected: has_cat && record.category == cat) { plain cat }
       end
+    end
+  end
+
+  def budget_save_footer
+    div(class: "flex flex-col gap-2 pt-3") do
+      p(
+        class: [
+          "hidden min-h-[1.25rem] text-center text-[11px] tabular-nums text-muted-foreground",
+          "max-lg:min-h-[1.25rem] max-lg:text-center"
+        ].join(" "),
+        data: { budget_auto_save_target: "status" }
+      ) { plain "" }
+
+      Button(
+        type: :button,
+        variant: :primary,
+        size: :md,
+        class: "w-full lg:hidden",
+        data: {
+          budget_auto_save_target: "saveButton",
+          action: "click->budget-auto-save#saveFromButton"
+        }
+      ) { "儲存" }
     end
   end
 
