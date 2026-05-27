@@ -8,13 +8,23 @@ class BudgetsControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
   end
 
+  test "index rejects ym beyond planning horizon" do
+    travel_to Time.zone.local(2026, 5, 15, 12, 0, 0) do
+      get budgets_path(ym: "2026-08")
+      assert_response :success
+      assert_includes response.body, "2026 年 6 月摘要"
+      refute_includes response.body, 'value="2026-08"'
+    end
+  end
+
   test "index includes next month in selector for early budget entry" do
     travel_to Time.zone.local(2026, 5, 15, 12, 0, 0) do
       get budgets_path
       assert_response :success
       assert_includes response.body, 'value="2026-06"'
-      assert_includes response.body, "2026 年 6 月（下月）"
-      assert_includes response.body, "可選"
+      assert_includes response.body, "budget-carousel-nav"
+      assert_includes response.body, "上一筆"
+      refute_includes response.body, "（下月）"
       assert CalendarMonth.exists?(year: 2026, month: 6)
     end
   end

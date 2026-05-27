@@ -21,9 +21,19 @@ class CalendarMonth < ApplicationRecord
     end
   end
 
-  # Ensures the month after +reference_date+ exists so budgets can be entered early.
-  def self.ensure_next_month_exists!(reference_date: Time.zone.today)
+  # Latest month users may plan for: calendar month after +reference_date+ (handles year rollover).
+  def self.planning_horizon_month(reference_date: Time.zone.today)
     next_year, next_month = following_year_month(reference_date.year, reference_date.month)
     for_year_month!(next_year, next_month)
+  end
+
+  # Ensures the planning-horizon month row exists (today + 1 month, not selected + 1).
+  def self.ensure_next_month_exists!(reference_date: Time.zone.today)
+    planning_horizon_month(reference_date: reference_date)
+  end
+
+  def self.on_or_before_planning_horizon?(year, month, reference_date: Time.zone.today)
+    horizon = planning_horizon_month(reference_date: reference_date)
+    year < horizon.year || (year == horizon.year && month <= horizon.month)
   end
 end
