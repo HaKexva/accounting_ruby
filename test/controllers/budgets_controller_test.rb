@@ -24,6 +24,7 @@ class BudgetsControllerTest < ActionDispatch::IntegrationTest
       assert_includes response.body, 'value="2026-06"'
       assert_includes response.body, "budget-carousel-nav"
       assert_includes response.body, "上一筆"
+      assert_includes response.body, "儲存"
       refute_includes response.body, "（下月）"
       assert CalendarMonth.exists?(year: 2026, month: 6)
     end

@@ -1,8 +1,8 @@
 import { Controller } from "@hotwired/stimulus";
 
-/** Mobile-friendly prev/next controls for budget carousels. */
+/** Prev/next controls for budget carousels (mobile bar + desktop side arrows). */
 export default class extends Controller {
-  static targets = ["status"];
+  static targets = ["status", "prevButton", "nextButton"];
 
   connect() {
     this.carouselRoot = this.element.querySelector(
@@ -42,20 +42,29 @@ export default class extends Controller {
   }
 
   #updateStatus() {
-    if (!this.hasStatusTarget) return;
     const embla = this.#carouselController()?.carousel;
     if (!embla) {
-      this.statusTarget.textContent = "";
+      if (this.hasStatusTarget) this.statusTarget.textContent = "";
       return;
     }
 
     const total = embla.scrollSnapList().length;
     const index = embla.selectedScrollSnap();
-    if (total <= 1) {
-      this.statusTarget.textContent = total === 1 ? "第 1 筆" : "";
-      return;
+    if (this.hasStatusTarget) {
+      if (total <= 1) {
+        this.statusTarget.textContent = total === 1 ? "第 1 筆" : "";
+      } else {
+        this.statusTarget.textContent = `第 ${index + 1}／${total} 筆`;
+      }
     }
 
-    this.statusTarget.textContent = `第 ${index + 1}／${total} 筆`;
+    const canPrev = embla.canScrollPrev();
+    const canNext = embla.canScrollNext();
+    this.prevButtonTargets.forEach((button) => {
+      button.disabled = !canPrev;
+    });
+    this.nextButtonTargets.forEach((button) => {
+      button.disabled = !canNext;
+    });
   }
 }
