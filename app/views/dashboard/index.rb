@@ -205,7 +205,7 @@ class Views::Dashboard::Index < Views::Base
 
   def mobile_category_stat_squares
     div(
-      class: "lg:hidden #{MONTH_SUMMARY_STATS_ROW_CLASS}",
+      class: "lg:hidden #{MOBILE_CATEGORY_STATS_ROW_CLASS}",
       data: { expenditure_mobile_sticky_summary_target: "statsRow" }
     ) do
       category_summary_chip(
@@ -232,7 +232,7 @@ class Views::Dashboard::Index < Views::Base
 
   def category_summary_chip(label:, target:, initial:, label_target: nil, accent: nil)
     div(
-      class: stat_chip_class(accent: accent),
+      class: mobile_stat_chip_class(accent: accent),
       data: { expenditure_mobile_sticky_summary_target: "chip" }
     ) do
       p(
