@@ -118,13 +118,19 @@ class Views::Dashboard::Index < Views::Base
               ) { plain "#{@month_count} 筆" }
             end
           end
-          p(class: "text-[11px] leading-snug text-muted-foreground sm:text-xs") do
+          p(
+            class: "text-[11px] leading-snug text-muted-foreground sm:text-xs",
+            data: { expenditure_mobile_sticky_summary_target: "summaryHint" }
+          ) do
             plain "依目前選擇的消費類別（預算來自本月支出預算）"
           end
         end
       end
       div(class: MONTH_SUMMARY_BODY_CLASS) do
-        div(class: MONTH_SUMMARY_STATS_ROW_CLASS) do
+        div(
+          class: MONTH_SUMMARY_STATS_ROW_CLASS,
+          data: { expenditure_mobile_sticky_summary_target: "statsRow" }
+        ) do
           category_summary_chip(
             label: "預算",
             target: "budgetAmount",
@@ -145,7 +151,7 @@ class Views::Dashboard::Index < Views::Base
             accent: :remain
           )
         end
-        div(class: CHART_PANEL_CLASS) do
+        div(class: CHART_PANEL_CLASS, data: { expenditure_mobile_sticky_summary_target: "chartPanel" }) do
           p(class: "shrink-0 text-center text-xs font-medium text-foreground") { "本月消費支出結構" }
           p(class: "shrink-0 text-center text-[11px] leading-snug text-muted-foreground sm:text-xs") do
             plain "各類別同色：淺色＝尚未使用預算、深色＝已使用；另含預算收入－預算支出（占比以收入預算合計為分母）"
@@ -171,14 +177,22 @@ class Views::Dashboard::Index < Views::Base
   end
 
   def category_summary_chip(label:, target:, initial:, label_target: nil, accent: nil)
-    div(class: stat_chip_class(accent: accent)) do
+    div(
+      class: stat_chip_class(accent: accent),
+      data: { expenditure_mobile_sticky_summary_target: "chip" }
+    ) do
       p(
         class: STAT_CHIP_LABEL_CLASS,
-        data: (label_target ? { expenditure_live_category_summary_target: label_target } : {})
+        data: {
+          expenditure_mobile_sticky_summary_target: "chipLabel"
+        }.merge(label_target ? { expenditure_live_category_summary_target: label_target } : {})
       ) { label }
       p(
         class: STAT_CHIP_VALUE_CLASS,
-        data: { expenditure_live_category_summary_target: target }
+        data: {
+          expenditure_live_category_summary_target: target,
+          expenditure_mobile_sticky_summary_target: "chipValue"
+        }
       ) { plain initial }
     end
   end
