@@ -2,7 +2,7 @@ import { Controller } from "@hotwired/stimulus";
 
 /** POST 實際支出（JSON），更新本月摘要與圓餅圖。 */
 export default class extends Controller {
-  static targets = ["mainForm", "status", "monthCount"];
+  static targets = ["mainForm", "status", "monthCount", "monthTotal"];
 
   connect() {
     this.mainFormTarget.addEventListener("submit", this.#handleSubmit);
@@ -67,6 +67,15 @@ export default class extends Controller {
     if (this.hasMonthCountTarget) {
       this.monthCountTarget.textContent = `${count} 筆`;
     }
+    if (this.hasMonthTotalTarget) {
+      const total = Number(tally.total) || 0;
+      this.monthTotalTarget.textContent = this.#formatTwd(total);
+    }
+  }
+
+  #formatTwd(n) {
+    const v = Math.round(Number(n) || 0);
+    return `NT$${v.toLocaleString("zh-TW")}`;
   }
 
   #setStatus(text) {

@@ -6,13 +6,23 @@ import { Controller } from "@hotwired/stimulus";
  * Uses visualViewport so the bar stays usable when the software keyboard opens.
  */
 export default class extends Controller {
-  static targets = ["stickyPanel", "amountInput"];
+  static targets = [
+    "stickyPanel",
+    "amountInput",
+    "statsRow",
+    "chip",
+    "chipLabel",
+    "chipValue",
+    "chartPanel",
+    "summaryHint",
+  ];
 
   #mq = null;
   #scrollRoot = null;
   #placeholder = null;
   #pinned = false;
   #amountFocused = false;
+  #compact = false;
   #pinnedClass = [
     "fixed",
     "z-[60]",
@@ -31,6 +41,20 @@ export default class extends Controller {
     "pt-2",
     "sm:px-6",
   ];
+
+  #compactPanelClass = ["pb-2"];
+
+  #compactStatsRowAdd = ["flex-nowrap", "justify-between", "gap-2"];
+  #compactStatsRowRemove = ["flex-wrap", "justify-center"];
+
+  #compactChipAdd = ["aspect-square", "p-2", "min-w-0"];
+  #compactChipRemove = ["px-2.5", "py-2.5", "sm:px-3.5", "sm:py-3", "basis-[calc(50%-0.25rem)]"];
+
+  #compactLabelAdd = ["text-[10px]", "leading-none"];
+  #compactLabelRemove = ["sm:text-xs"];
+
+  #compactValueAdd = ["mt-0.5", "text-sm", "leading-none"];
+  #compactValueRemove = ["sm:text-base"];
 
   connect() {
     if (!this.hasStickyPanelTarget || this.amountInputTargets.length === 0) return;
@@ -80,6 +104,7 @@ export default class extends Controller {
   #onViewportChange = () => {
     if (!this.#pinned) return;
     this.#updatePinnedTop();
+    this.#updateCompactState();
   };
 
   #onFocusIn = (ev) => {
@@ -157,6 +182,7 @@ export default class extends Controller {
       this.#pinnedClass.forEach((c) => panel.classList.add(c));
       this.#pinned = true;
       this.#updatePinnedTop();
+      this.#updateCompactState();
     } else if (!shouldPin && this.#pinned) {
       this.#teardownPinned();
     } else if (this.#pinned) {
@@ -164,6 +190,7 @@ export default class extends Controller {
       const panel = this.stickyPanelTarget;
       if (ph) ph.style.height = `${panel.offsetHeight}px`;
       this.#updatePinnedTop();
+      this.#updateCompactState();
     }
   };
 
@@ -179,8 +206,72 @@ export default class extends Controller {
     }
   }
 
+  #shouldCompact() {
+    if (!this.#pinned) return false;
+    const vv = window.visualViewport;
+    const headerBottom = this.#headerBottom();
+    const viewportH = vv ? vv.height : window.innerHeight;
+    const available = Math.max(0, viewportH - headerBottom - 8);
+    const panelH = this.stickyPanelTarget.offsetHeight || 0;
+
+    // When the screen is compressed (keyboard open) OR the pinned panel is too tall.
+    const keyboardLikely = vv && vv.height < window.innerHeight * 0.72;
+    const tooTall = panelH > available * 0.55;
+    return Boolean(keyboardLikely || tooTall);
+  }
+
+  #updateCompactState() {
+    const should = this.#shouldCompact();
+    if (should === this.#compact) return;
+    this.#compact = should;
+    this.#applyCompact(this.#compact);
+    // Re-measure placeholder so content never gets covered.
+    if (this.#placeholder && this.#pinned) {
+      this.#placeholder.style.height = `${this.stickyPanelTarget.offsetHeight}px`;
+    }
+  }
+
+  #applyCompact(on) {
+    const panel = this.stickyPanelTarget;
+    const statsRow = this.hasStatsRowTarget ? this.statsRowTarget : null;
+
+    if (on) this.#compactPanelClass.forEach((c) => panel.classList.add(c));
+    else this.#compactPanelClass.forEach((c) => panel.classList.remove(c));
+
+    // Hide non-essential parts when compact so it doesn't block the form.
+    if (this.hasChartPanelTarget) this.chartPanelTarget.classList.toggle("hidden", on);
+    if (this.hasSummaryHintTarget) this.summaryHintTarget.classList.toggle("hidden", on);
+
+    if (statsRow) {
+      this.#compactStatsRowRemove.forEach((c) => statsRow.classList.toggle(c, !on));
+      this.#compactStatsRowAdd.forEach((c) => statsRow.classList.toggle(c, on));
+    }
+
+    this.chipTargets.forEach((chip) => {
+      this.#compactChipRemove.forEach((c) => chip.classList.toggle(c, !on));
+      this.#compactChipAdd.forEach((c) => chip.classList.toggle(c, on));
+      chip.classList.toggle("flex-1", !on);
+      chip.classList.toggle("flex-none", on);
+      chip.style.flexBasis = on ? "33.3333%" : "";
+    });
+
+    this.chipLabelTargets.forEach((el) => {
+      this.#compactLabelRemove.forEach((c) => el.classList.toggle(c, !on));
+      this.#compactLabelAdd.forEach((c) => el.classList.toggle(c, on));
+    });
+
+    this.chipValueTargets.forEach((el) => {
+      this.#compactValueRemove.forEach((c) => el.classList.toggle(c, !on));
+      this.#compactValueAdd.forEach((c) => el.classList.toggle(c, on));
+    });
+  }
+
   #teardownPinned() {
     const panel = this.stickyPanelTarget;
+    if (this.#compact) {
+      this.#compact = false;
+      this.#applyCompact(false);
+    }
     this.#pinnedClass.forEach((c) => panel.classList.remove(c));
     panel.style.top = "";
     this.#pinned = false;
