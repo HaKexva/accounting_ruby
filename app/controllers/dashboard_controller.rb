@@ -26,6 +26,7 @@ class DashboardController < ApplicationController
         ExpenditureBudget.none
       end
     category_budgets = budget_scope.group(:category).sum(:amount)
+    expenditure_budget_total = budget_scope.sum(:amount)
 
     revenue_scope =
       if user
@@ -44,6 +45,7 @@ class DashboardController < ApplicationController
       month_count: month_count,
       category_amounts: by_category,
       category_budgets: category_budgets,
+      expenditure_budget_total: expenditure_budget_total,
       revenue_total: revenue_total,
       taxonomy: taxonomy
     )
