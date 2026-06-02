@@ -104,6 +104,79 @@ class DashboardControllerTest < ActionDispatch::IntegrationTest
     end
   end
 
+  test "history supports text search filter" do
+    travel_to Time.zone.local(2026, 5, 15, 12, 0, 0) do
+      cm = CalendarMonth.for_year_month!(2026, 5)
+      ActualExpenditure.create!(
+        user: users(:one),
+        calendar_month: cm,
+        transaction_date: Date.new(2026, 5, 10),
+        transaction_item: "晚餐",
+        category: ExpenditureTaxonomy::DEFAULT_CATEGORIES.first,
+        payment_method: "現金",
+        actual_amount: 100,
+        posted_amount: 100,
+        note: "公司聚餐"
+      )
+      ActualExpenditure.create!(
+        user: users(:one),
+        calendar_month: cm,
+        transaction_date: Date.new(2026, 5, 11),
+        transaction_item: "早餐",
+        category: ExpenditureTaxonomy::DEFAULT_CATEGORIES.first,
+        payment_method: "現金",
+        actual_amount: 50,
+        posted_amount: 50,
+        note: "普通"
+      )
+
+      get expense_history_path(q: "聚餐")
+      assert_response :success
+      assert_includes response.body, "晚餐"
+      assert_not_includes response.body, "早餐"
+    end
+  end
+
+  test "history supports structured filters" do
+    travel_to Time.zone.local(2026, 5, 15, 12, 0, 0) do
+      cm = CalendarMonth.for_year_month!(2026, 5)
+      cat_a, cat_b = ExpenditureTaxonomy::DEFAULT_CATEGORIES.first(2)
+      ActualExpenditure.create!(
+        user: users(:one),
+        calendar_month: cm,
+        transaction_date: Date.new(2026, 5, 1),
+        transaction_item: "FILTER_MATCH_A",
+        category: cat_a,
+        payment_method: "多元支付",
+        payment_platform: ExpenditureTaxonomy::DEFAULT_PAYMENT_PLATFORMS.first,
+        actual_amount: 100,
+        posted_amount: 120
+      )
+      ActualExpenditure.create!(
+        user: users(:one),
+        calendar_month: cm,
+        transaction_date: Date.new(2026, 5, 20),
+        transaction_item: "FILTER_OUT_B",
+        category: cat_b,
+        payment_method: "現金",
+        actual_amount: 10,
+        posted_amount: 10
+      )
+
+      get expense_history_path(
+        category: cat_a,
+        payment_method: "多元支付",
+        date_from: "2026-05-01",
+        date_to: "2026-05-10",
+        min_posted_amount: "100",
+        max_posted_amount: "200"
+      )
+      assert_response :success
+      assert_includes response.body, "FILTER_MATCH_A"
+      assert_not_includes response.body, "FILTER_OUT_B"
+    end
+  end
+
   test "history includes edit and delete controls" do
     get expense_history_path
     assert_response :success

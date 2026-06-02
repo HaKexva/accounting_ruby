@@ -54,10 +54,28 @@ class DashboardController < ApplicationController
     month_filter = optional_calendar_month_from_params
     month_choices = calendar_month_choices_for(user, selected: month_filter)
 
+    filters = history_filter_params
+    q = filters[:q]
+    category = filters[:category]
+    payment_method = filters[:payment_method]
+    payment_platform = filters[:payment_platform]
+    date_from = parse_iso_date(filters[:date_from])
+    date_to = parse_iso_date(filters[:date_to])
+    min_amount = parse_decimal(filters[:min_posted_amount])
+    max_amount = parse_decimal(filters[:max_posted_amount])
+
     expenditures =
       if user
-        scope = ActualExpenditure.includes(:calendar_month).where(user: user)
+        scope = ActualExpenditure.includes(:calendar_month).for_user(user)
         scope = scope.where(calendar_month: month_filter) if month_filter
+        scope = scope.search_text(q)
+        scope = scope.category_is(category) if category.present?
+        scope = scope.payment_method_is(payment_method) if payment_method.present?
+        scope = scope.payment_platform_is(payment_platform) if payment_platform.present?
+        scope = scope.transaction_date_from(date_from) if date_from
+        scope = scope.transaction_date_to(date_to) if date_to
+        scope = scope.posted_amount_gte(min_amount) if min_amount
+        scope = scope.posted_amount_lte(max_amount) if max_amount
         scope.order(transaction_date: :desc, id: :desc)
       else
         ActualExpenditure.none
@@ -67,7 +85,32 @@ class DashboardController < ApplicationController
       actual_expenditures: expenditures,
       month_filter: month_filter,
       month_choices: month_choices,
-      taxonomy: taxonomy
+      taxonomy: taxonomy,
+      filters: filters
     )
+  end
+
+  private
+
+  def history_filter_params
+    params.permit(:q, :category, :payment_method, :payment_platform, :date_from, :date_to,
+                  :min_posted_amount, :max_posted_amount)
+  end
+
+  def parse_iso_date(raw)
+    return nil if raw.blank?
+
+    Date.iso8601(raw.to_s)
+  rescue ArgumentError
+    nil
+  end
+
+  def parse_decimal(raw)
+    s = raw.to_s.strip.delete(",").presence
+    return nil if s.blank?
+
+    BigDecimal(s)
+  rescue ArgumentError
+    nil
   end
 end
