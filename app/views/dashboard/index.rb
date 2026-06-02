@@ -51,7 +51,7 @@ class Views::Dashboard::Index < Views::Base
         ].join(" ")
       }
     ) do
-      div(class: "hidden shrink-0 border-b border-border/50 pb-3 lg:block lg:pb-4") do
+      div(class: "hidden lg:block #{PAGE_TOP_STICKY} border-border/50") do
         header_row
       end
 
