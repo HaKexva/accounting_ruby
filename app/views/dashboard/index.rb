@@ -51,7 +51,7 @@ class Views::Dashboard::Index < Views::Base
         ].join(" ")
       }
     ) do
-      div(class: "hidden shrink-0 border-b border-border/50 pb-3 lg:block lg:pb-4") do
+      div(class: "hidden lg:block #{PAGE_TOP_STICKY} border-border/50") do
         header_row
       end
 
@@ -157,81 +157,55 @@ class Views::Dashboard::Index < Views::Base
   end
 
   def desktop_summary_squares
-    div(class: "hidden lg:flex lg:items-stretch lg:justify-between lg:gap-3") do
-      # Left: category-driven summary (updates with selected category)
-      div(
-        class: [
-          stat_chip_class(accent: :remain),
-          "aspect-square w-44 flex-none items-start text-left px-4 py-3"
-        ].join(" "),
-        data: { expenditure_mobile_sticky_summary_target: "chip" }
-      ) do
-        p(class: "text-xs font-semibold text-foreground") { "類別統計" }
-        div(class: "mt-2 space-y-1") do
-          p(class: "text-[11px] text-muted-foreground") do
-            plain "預算："
-            span(
-              class: "ml-1 font-semibold tabular-nums text-foreground",
-              data: { expenditure_live_category_summary_target: "budgetAmount" }
-            ) { plain "NT$0" }
-          end
-          p(class: "text-[11px] text-muted-foreground") do
-            plain "支出："
-            span(
-              class: "ml-1 font-semibold tabular-nums text-foreground",
-              data: { expenditure_live_category_summary_target: "expenseAmount" }
-            ) { plain "NT$0" }
-          end
-          p(class: "text-[11px] text-muted-foreground") do
-            span(data: { expenditure_live_category_summary_target: "remainLabel" }) { plain "餘額" }
-            plain "："
-            span(
-              class: "ml-1 font-semibold tabular-nums",
-              data: { expenditure_live_category_summary_target: "remainAmount" }
-            ) { plain "NT$0" }
-          end
+    div(class: DESKTOP_SUMMARY_GRID_CLASS) do
+      div(class: desktop_summary_square_class(accent: :remain)) do
+        p(class: "text-[11px] font-semibold text-foreground sm:text-xs") { "類別統計" }
+        div(class: "mt-1 min-w-0 space-y-0.5") do
+          desktop_category_stat_line(label: "預算", target: "budgetAmount")
+          desktop_category_stat_line(label: "支出", target: "expenseAmount")
+          desktop_category_stat_line(label: "餘額", target: "remainAmount", label_target: "remainLabel")
         end
       end
 
-      # Right: month totals (static budget total; expense total updated on create)
-      div(class: "grid grid-cols-2 gap-3") do
-        div(
-          class: [
-            stat_chip_class(accent: :budget),
-            "aspect-square w-44 flex-none px-4 py-3"
-          ].join(" "),
-          data: { expenditure_mobile_sticky_summary_target: "chip" }
-        ) do
-          p(class: "text-xs font-semibold text-foreground") { "總預算" }
-          p(class: "mt-2 text-lg font-semibold tabular-nums text-foreground") do
-            plain "NT$#{format_decimal(@expenditure_budget_total)}"
-          end
-          p(class: "mt-1 text-[11px] text-muted-foreground") { "本月支出預算合計" }
+      div(class: desktop_summary_square_class(accent: :budget)) do
+        p(class: "text-[11px] font-semibold text-foreground sm:text-xs") { "總預算" }
+        p(class: "mt-1 min-w-0 truncate text-sm font-semibold tabular-nums text-foreground sm:text-base") do
+          plain "NT$#{format_decimal(@expenditure_budget_total)}"
         end
-
-        div(
-          class: [
-            stat_chip_class(accent: :expense),
-            "aspect-square w-44 flex-none px-4 py-3"
-          ].join(" "),
-          data: { expenditure_mobile_sticky_summary_target: "chip" }
-        ) do
-          p(class: "text-xs font-semibold text-foreground") { "總支出" }
-          p(
-            class: "mt-2 text-lg font-semibold tabular-nums text-foreground",
-            data: { actual_expenditure_form_target: "monthTotal" }
-          ) do
-            plain "NT$#{format_decimal(@month_total)}"
-          end
-          p(class: "mt-1 text-[11px] text-muted-foreground") { "本月實際支出合計" }
-        end
+        p(class: "mt-auto text-[10px] leading-snug text-muted-foreground") { "本月支出預算" }
       end
+
+      div(class: desktop_summary_square_class(accent: :expense)) do
+        p(class: "text-[11px] font-semibold text-foreground sm:text-xs") { "總支出" }
+        p(
+          class: "mt-1 min-w-0 truncate text-sm font-semibold tabular-nums text-foreground sm:text-base",
+          data: { actual_expenditure_form_target: "monthTotal" }
+        ) do
+          plain "NT$#{format_decimal(@month_total)}"
+        end
+        p(class: "mt-auto text-[10px] leading-snug text-muted-foreground") { "本月實際支出" }
+      end
+    end
+  end
+
+  def desktop_category_stat_line(label:, target:, label_target: nil)
+    p(class: "min-w-0 truncate text-[10px] text-muted-foreground sm:text-[11px]") do
+      if label_target
+        span(data: { expenditure_live_category_summary_target: label_target }) { label }
+      else
+        plain label
+      end
+      plain " "
+      span(
+        class: "font-semibold tabular-nums text-foreground",
+        data: { expenditure_live_category_summary_target: target }
+      ) { plain "NT$0" }
     end
   end
 
   def mobile_category_stat_squares
     div(
-      class: "lg:hidden #{MONTH_SUMMARY_STATS_ROW_CLASS}",
+      class: "lg:hidden #{MOBILE_CATEGORY_STATS_ROW_CLASS}",
       data: { expenditure_mobile_sticky_summary_target: "statsRow" }
     ) do
       category_summary_chip(
@@ -258,7 +232,7 @@ class Views::Dashboard::Index < Views::Base
 
   def category_summary_chip(label:, target:, initial:, label_target: nil, accent: nil)
     div(
-      class: stat_chip_class(accent: accent),
+      class: mobile_stat_chip_class(accent: accent),
       data: { expenditure_mobile_sticky_summary_target: "chip" }
     ) do
       p(

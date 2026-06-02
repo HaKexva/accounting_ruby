@@ -16,6 +16,11 @@ class DashboardControllerTest < ActionDispatch::IntegrationTest
       assert_includes response.body, "data-expenditure-live-category-summary-budgets-value"
       assert_includes response.body, "預算"
       assert_includes response.body, "餘額"
+      assert_includes response.body, "lg:grid-cols-3"
+      assert_includes response.body, "類別統計"
+      assert_includes response.body, "總預算"
+      assert_includes response.body, "總支出"
+      assert_includes response.body, "flex-nowrap"
     end
   end
 

@@ -48,7 +48,7 @@ export default class extends Controller {
   #compactStatsRowRemove = ["flex-wrap", "justify-center"];
 
   #compactChipAdd = ["aspect-square", "p-2", "min-w-0"];
-  #compactChipRemove = ["px-2.5", "py-2.5", "sm:px-3.5", "sm:py-3", "basis-[calc(50%-0.25rem)]"];
+  #compactChipRemove = ["px-2.5", "py-2.5", "sm:px-2.5", "sm:py-3", "basis-0"];
 
   #compactLabelAdd = ["text-[10px]", "leading-none"];
   #compactLabelRemove = ["sm:text-xs"];

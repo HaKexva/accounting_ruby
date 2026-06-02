@@ -50,6 +50,22 @@ class Views::Base < Components::Base
     remain: "border-emerald-500/35 bg-emerald-500/[0.08]"
   }.freeze
 
+  # Dashboard mobile: 預算 / 支出 / 餘額 in one row (equal thirds).
+  MOBILE_CATEGORY_STATS_ROW_CLASS = [
+    "flex w-full flex-row flex-nowrap items-stretch justify-between gap-2 sm:gap-3"
+  ].join(" ")
+  MOBILE_STAT_CHIP_BASE_CLASS = [
+    "flex min-w-0 flex-1 basis-0 flex-col items-center rounded-xl border px-2 py-2.5",
+    "text-center leading-tight shadow-sm sm:px-2.5 sm:py-3"
+  ].join(" ")
+
+  # Dashboard desktop: three equal squares in the left column (no flex-1 / lg:w-full from stat chips).
+  DESKTOP_SUMMARY_GRID_CLASS = "hidden lg:grid lg:w-full lg:min-w-0 lg:grid-cols-3 lg:gap-2"
+  DESKTOP_SUMMARY_SQUARE_CLASS = [
+    "flex min-w-0 flex-col justify-between overflow-hidden rounded-xl border",
+    "aspect-square p-2.5 text-left leading-tight shadow-sm sm:p-3"
+  ].join(" ")
+
   PAGE_SPLIT_GRID_CLASS = [
     "flex min-h-0 flex-1 flex-col",
     "lg:grid lg:grid-cols-2 lg:items-start lg:gap-6 xl:gap-8 lg:pt-2"
@@ -127,6 +143,18 @@ class Views::Base < Components::Base
     accent_key = accent&.to_sym
     accent_classes = STAT_CHIP_ACCENTS.fetch(accent_key, "border-border/50 bg-muted/30")
     "#{STAT_CHIP_BASE_CLASS} #{accent_classes}"
+  end
+
+  def desktop_summary_square_class(accent: nil)
+    accent_key = accent&.to_sym
+    accent_classes = STAT_CHIP_ACCENTS.fetch(accent_key, "border-border/50 bg-muted/30")
+    "#{DESKTOP_SUMMARY_SQUARE_CLASS} #{accent_classes}"
+  end
+
+  def mobile_stat_chip_class(accent: nil)
+    accent_key = accent&.to_sym
+    accent_classes = STAT_CHIP_ACCENTS.fetch(accent_key, "border-border/50 bg-muted/30")
+    "#{MOBILE_STAT_CHIP_BASE_CLASS} #{accent_classes}"
   end
 
   def calendar_month_option_label(calendar_month, planning_calendar_month: nil)
