@@ -102,7 +102,10 @@ class Views::Dashboard::Index < Views::Base
 
   def month_data_panel
     section(class: "#{MONTH_SUMMARY_SECTION_CLASS}", aria: { label: "本月實際支出摘要" }) do
-      div(class: MONTH_SUMMARY_HEADER_CLASS) do
+      div(
+        class: MONTH_SUMMARY_HEADER_CLASS,
+        data: { expenditure_mobile_sticky_summary_target: "summaryHeader" }
+      ) do
         div(class: "flex flex-col gap-1") do
           div(class: "flex items-baseline justify-between gap-2") do
             h2(class: MONTH_SUMMARY_TITLE_CLASS) { "月份摘要" }

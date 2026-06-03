@@ -15,6 +15,7 @@ export default class extends Controller {
     "chipValue",
     "chartPanel",
     "summaryHint",
+    "summaryHeader",
   ];
 
   #mq = null;
@@ -23,6 +24,7 @@ export default class extends Controller {
   #pinned = false;
   #amountFocused = false;
   #compact = false;
+  #scrollTimer = null;
   #pinnedClass = [
     "fixed",
     "z-[60]",
@@ -84,6 +86,8 @@ export default class extends Controller {
     window.visualViewport?.removeEventListener("resize", this.#onViewportChange);
     window.visualViewport?.removeEventListener("scroll", this.#onViewportChange);
     this.#mq?.removeEventListener("change", this.#onMqChange);
+    window.clearTimeout(this.#scrollTimer);
+    this.#scrollTimer = null;
     this.#teardownPinned();
     this.#placeholder?.remove();
     this.#placeholder = null;
@@ -97,14 +101,16 @@ export default class extends Controller {
   #onResize = () => {
     this.#updateStickyState();
     this.#updatePinnedTop();
+    this.#updateCompactState();
+    this.#scheduleEnsureAmountVisible();
   };
 
   #onScroll = () => this.#updateStickyState();
 
   #onViewportChange = () => {
-    if (!this.#pinned) return;
-    this.#updatePinnedTop();
     this.#updateCompactState();
+    if (this.#pinned) this.#updatePinnedTop();
+    this.#scheduleEnsureAmountVisible();
   };
 
   #onFocusIn = (ev) => {
@@ -112,7 +118,9 @@ export default class extends Controller {
     if (!this.amountInputTargets.includes(ev.target)) return;
     this.#amountFocused = true;
     this.#ensurePlaceholder();
+    this.#updateCompactState();
     this.#updateStickyState();
+    this.#scheduleEnsureAmountVisible();
   };
 
   #onFocusOut = () => {
@@ -124,6 +132,7 @@ export default class extends Controller {
       if (stillAmount) return;
       this.#amountFocused = false;
       this.#teardownPinned();
+      this.#updateCompactState();
     });
   };
 
@@ -139,6 +148,17 @@ export default class extends Controller {
     const h = this.#headerEl();
     if (!h) return 56;
     return h.getBoundingClientRect().bottom;
+  }
+
+  #keyboardLikely() {
+    const vv = window.visualViewport;
+    return Boolean(vv && vv.height < window.innerHeight * 0.72);
+  }
+
+  #activeAmountInput() {
+    const active = document.activeElement;
+    if (!active) return null;
+    return this.amountInputTargets.find((el) => el === active || el.contains(active)) ?? null;
   }
 
   #isSummarySlotVisible() {
@@ -183,6 +203,7 @@ export default class extends Controller {
       this.#pinned = true;
       this.#updatePinnedTop();
       this.#updateCompactState();
+      this.#scheduleEnsureAmountVisible();
     } else if (!shouldPin && this.#pinned) {
       this.#teardownPinned();
     } else if (this.#pinned) {
@@ -197,27 +218,26 @@ export default class extends Controller {
   #updatePinnedTop() {
     if (!this.#pinned) return;
     const panel = this.stickyPanelTarget;
-    const headerH = this.#headerBottom();
     const vv = window.visualViewport;
-    if (vv && vv.height < window.innerHeight * 0.72) {
+    if (vv && this.#keyboardLikely()) {
       panel.style.top = `${vv.offsetTop}px`;
     } else {
-      panel.style.top = `${headerH}px`;
+      panel.style.top = `${this.#headerBottom()}px`;
     }
   }
 
   #shouldCompact() {
+    if (!this.#isMobile() || !this.#amountFocused) return false;
+    if (this.#keyboardLikely()) return true;
+
     if (!this.#pinned) return false;
+
     const vv = window.visualViewport;
     const headerBottom = this.#headerBottom();
     const viewportH = vv ? vv.height : window.innerHeight;
     const available = Math.max(0, viewportH - headerBottom - 8);
     const panelH = this.stickyPanelTarget.offsetHeight || 0;
-
-    // When the screen is compressed (keyboard open) OR the pinned panel is too tall.
-    const keyboardLikely = vv && vv.height < window.innerHeight * 0.72;
-    const tooTall = panelH > available * 0.55;
-    return Boolean(keyboardLikely || tooTall);
+    return panelH > available * 0.55;
   }
 
   #updateCompactState() {
@@ -225,10 +245,10 @@ export default class extends Controller {
     if (should === this.#compact) return;
     this.#compact = should;
     this.#applyCompact(this.#compact);
-    // Re-measure placeholder so content never gets covered.
     if (this.#placeholder && this.#pinned) {
       this.#placeholder.style.height = `${this.stickyPanelTarget.offsetHeight}px`;
     }
+    if (this.#amountFocused) this.#scheduleEnsureAmountVisible();
   }
 
   #applyCompact(on) {
@@ -238,7 +258,9 @@ export default class extends Controller {
     if (on) this.#compactPanelClass.forEach((c) => panel.classList.add(c));
     else this.#compactPanelClass.forEach((c) => panel.classList.remove(c));
 
-    // Hide non-essential parts when compact so it doesn't block the form.
+    if (this.hasSummaryHeaderTarget) {
+      this.summaryHeaderTarget.classList.toggle("hidden", on);
+    }
     if (this.hasChartPanelTarget) this.chartPanelTarget.classList.toggle("hidden", on);
     if (this.hasSummaryHintTarget) this.summaryHintTarget.classList.toggle("hidden", on);
 
@@ -264,6 +286,43 @@ export default class extends Controller {
       this.#compactValueRemove.forEach((c) => el.classList.toggle(c, !on));
       this.#compactValueAdd.forEach((c) => el.classList.toggle(c, on));
     });
+  }
+
+  #scheduleEnsureAmountVisible() {
+    if (!this.#amountFocused) return;
+    window.clearTimeout(this.#scrollTimer);
+    this.#scrollTimer = window.setTimeout(() => this.#ensureAmountInputVisible(), 320);
+    window.requestAnimationFrame(() => this.#ensureAmountInputVisible());
+  }
+
+  #ensureAmountInputVisible() {
+    if (!this.#isMobile() || !this.#amountFocused) return;
+
+    const input = this.#activeAmountInput();
+    if (!input) return;
+
+    const vv = window.visualViewport;
+    const scrollRoot = this.#scrollRoot;
+    if (!vv || !scrollRoot) {
+      input.scrollIntoView({ block: "nearest", behavior: "smooth" });
+      return;
+    }
+
+    const gap = 12;
+    const barBottom = this.#pinned
+      ? this.stickyPanelTarget.getBoundingClientRect().bottom
+      : this.#headerBottom();
+    const visibleTop = vv.offsetTop;
+    const visibleBottom = vv.offsetTop + vv.height;
+    const minTop = Math.max(visibleTop, barBottom) + gap;
+    const maxBottom = visibleBottom - gap;
+    const rect = input.getBoundingClientRect();
+
+    if (rect.top < minTop) {
+      scrollRoot.scrollBy({ top: rect.top - minTop, behavior: "smooth" });
+    } else if (rect.bottom > maxBottom) {
+      scrollRoot.scrollBy({ top: rect.bottom - maxBottom, behavior: "smooth" });
+    }
   }
 
   #teardownPinned() {
