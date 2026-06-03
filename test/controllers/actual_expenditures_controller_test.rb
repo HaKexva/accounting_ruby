@@ -79,6 +79,38 @@ class ActualExpendituresControllerTest < ActionDispatch::IntegrationTest
       json = JSON.parse(response.body)
       assert json["ok"]
       assert_nil json["row"]
+      assert json["month_tally"].is_a?(Hash)
+      assert json["month_tally"]["total"].present?
+    end
+  end
+
+  test "create returns month_tally total for dashboard ym when expense is in another month" do
+    travel_to Time.zone.local(2026, 5, 15, 12, 0, 0) do
+      may = CalendarMonth.for_year_month!(2026, 5)
+      initial_total =
+        ActualExpenditure.where(user: users(:one), calendar_month: may).sum(:actual_amount)
+
+      post actual_expenditures_path,
+           params: {
+             ym: "2026-05",
+             actual_expenditure: {
+               transaction_date: "2026-06-01",
+               transaction_item: "六月",
+               category: ExpenditureTaxonomy::DEFAULT_CATEGORIES.first,
+               payment_method: "現金",
+               actual_amount: "40",
+               posted_amount: "40",
+               note: ""
+             }
+           },
+           as: :json,
+           headers: { "Accept" => "application/json" }
+
+      assert_response :success
+      json = JSON.parse(response.body)
+      assert json["ok"]
+      assert_nil json["row"]
+      assert_equal initial_total.to_s("F"), json["month_tally"]["total"]
     end
   end
 

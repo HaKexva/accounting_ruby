@@ -54,7 +54,10 @@ export default class extends Controller {
       this.dispatch("success", {
         prefix: "actual-expenditure-form",
         bubbles: true,
-        detail: { by_category: json.month_tally?.by_category ?? {} },
+        detail: {
+          by_category: json.month_tally?.by_category ?? {},
+          month_tally: json.month_tally ?? null,
+        },
       });
     } catch {
       this.#setStatus("連線失敗");
@@ -67,10 +70,20 @@ export default class extends Controller {
     if (this.hasMonthCountTarget) {
       this.monthCountTarget.textContent = `${count} 筆`;
     }
+    const total = Number(tally.total) || 0;
+    this.#applyMonthTotal(total);
+  }
+
+  #applyMonthTotal(total) {
+    const formatted = this.#formatTwd(total);
     if (this.hasMonthTotalTarget) {
-      const total = Number(tally.total) || 0;
-      this.monthTotalTarget.textContent = this.#formatTwd(total);
+      this.monthTotalTargets.forEach((el) => {
+        el.textContent = formatted;
+      });
+      return;
     }
+    const fallback = document.getElementById("dashboard_month_total");
+    if (fallback) fallback.textContent = formatted;
   }
 
   #formatTwd(n) {

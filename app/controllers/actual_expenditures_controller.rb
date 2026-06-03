@@ -96,7 +96,9 @@ class ActualExpendituresController < ApplicationController
           }
           if created
             payload[:row] = (in_dashboard_month ? row_json(record) : nil)
-            payload[:month_tally] = month_tally_json(dashboard_cm, record.user) if in_dashboard_month
+            # Always refresh dashboard month summary (總支出 / 筆數 / 圓餅圖) even when the new
+            # record lands in another calendar month (e.g. 次月支付).
+            payload[:month_tally] = month_tally_json(dashboard_cm, record.user)
           end
           render json: payload
         end

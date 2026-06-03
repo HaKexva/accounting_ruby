@@ -102,7 +102,10 @@ class Views::Dashboard::Index < Views::Base
 
   def month_data_panel
     section(class: "#{MONTH_SUMMARY_SECTION_CLASS}", aria: { label: "本月實際支出摘要" }) do
-      div(class: MONTH_SUMMARY_HEADER_CLASS) do
+      div(
+        class: MONTH_SUMMARY_HEADER_CLASS,
+        data: { expenditure_mobile_sticky_summary_target: "summaryHeader" }
+      ) do
         div(class: "flex flex-col gap-1") do
           div(class: "flex items-baseline justify-between gap-2") do
             h2(class: MONTH_SUMMARY_TITLE_CLASS) { "月份摘要" }
@@ -178,6 +181,7 @@ class Views::Dashboard::Index < Views::Base
       div(class: desktop_summary_square_class(accent: :expense)) do
         p(class: "text-[11px] font-semibold text-foreground sm:text-xs") { "總支出" }
         p(
+          id: "dashboard_month_total",
           class: "mt-1 min-w-0 truncate text-sm font-semibold tabular-nums text-foreground sm:text-base",
           data: { actual_expenditure_form_target: "monthTotal" }
         ) do
