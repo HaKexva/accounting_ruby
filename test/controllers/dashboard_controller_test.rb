@@ -20,6 +20,7 @@ class DashboardControllerTest < ActionDispatch::IntegrationTest
       assert_includes response.body, "類別統計"
       assert_includes response.body, "總預算"
       assert_includes response.body, "總支出"
+      assert_includes response.body, 'data-actual-expenditure-form-target="monthTotal"'
       assert_includes response.body, "flex-nowrap"
     end
   end

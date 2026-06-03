@@ -178,6 +178,7 @@ class Views::Dashboard::Index < Views::Base
       div(class: desktop_summary_square_class(accent: :expense)) do
         p(class: "text-[11px] font-semibold text-foreground sm:text-xs") { "總支出" }
         p(
+          id: "dashboard_month_total",
           class: "mt-1 min-w-0 truncate text-sm font-semibold tabular-nums text-foreground sm:text-base",
           data: { actual_expenditure_form_target: "monthTotal" }
         ) do
