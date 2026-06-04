@@ -4,11 +4,12 @@ const FORM_ID = "dashboard_actual_expenditure_form";
 
 const FIELD_IDS = {
   category: "actual_expenditure_category",
+  actual_amount: "actual_expenditure_actual_amount",
   posted_amount: "actual_expenditure_posted_amount",
 };
 
 /**
- * 依表單「消費類別」與「列帳金額」即時更新左側摘要：預算、類別支出、餘額。
+ * 依表單「消費類別」與金額欄位即時更新左側摘要：預算、類別支出、餘額。
  */
 export default class extends Controller {
   static targets = ["budgetAmount", "expenseAmount", "remainAmount", "remainLabel"];
@@ -58,7 +59,7 @@ export default class extends Controller {
 
     const budget = this.#amountFor(this.#budgets, category);
     const saved = this.#amountFor(this.#spent, category);
-    const live = this.#livePostedAmount();
+    const live = this.#liveDraftAmount();
     const expense = saved + live;
     const remain = budget - expense;
 
@@ -126,8 +127,16 @@ export default class extends Controller {
     return el?.value?.trim() || "";
   }
 
-  #livePostedAmount() {
-    const el = this.#field("posted_amount");
+  #liveDraftAmount() {
+    const postedEl = this.#field("posted_amount");
+    const actualEl = this.#field("actual_amount");
+    // 列帳為主；尚未填列帳時用實際消費金額預覽左側「支出／餘額」。
+    if (postedEl?.value?.trim()) return this.#parseAmountEl(postedEl);
+    if (actualEl?.value?.trim()) return this.#parseAmountEl(actualEl);
+    return 0;
+  }
+
+  #parseAmountEl(el) {
     if (!el?.value) return 0;
     const n = parseFloat(String(el.value).replace(/,/g, ""));
     return Number.isFinite(n) ? n : 0;

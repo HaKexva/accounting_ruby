@@ -400,7 +400,10 @@ class Views::Dashboard::Index < Views::Base
               form: ACTUAL_EXPENDITURE_FORM_ID,
               placeholder: "0",
               required: true,
-              data: { expenditure_mobile_sticky_summary_target: "amountInput" }
+              data: {
+                expenditure_mobile_sticky_summary_target: "amountInput",
+                action: amount_live_summary_actions
+              }
             )
           end
 
@@ -413,7 +416,7 @@ class Views::Dashboard::Index < Views::Base
               required: true,
               data: {
                 expenditure_mobile_sticky_summary_target: "amountInput",
-                action: "input->expenditure-live-category-summary#recalc"
+                action: amount_live_summary_actions
               }
             )
           end
@@ -452,5 +455,12 @@ class Views::Dashboard::Index < Views::Base
 
   def history_ym_params
     calendar_month_ym.present? ? { ym: calendar_month_ym } : {}
+  end
+
+  def amount_live_summary_actions
+    [
+      "input->expenditure-live-category-summary#recalc",
+      "change->expenditure-live-category-summary#recalc"
+    ].join(" ")
   end
 end
