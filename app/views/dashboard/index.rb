@@ -44,10 +44,12 @@ class Views::Dashboard::Index < Views::Base
         expenditure_month_chart_category_order_value: @taxonomy.categories.to_json,
         expenditure_live_category_summary_budgets_value: category_budgets_json,
         expenditure_live_category_summary_spent_value: chart_categories_json,
+        actual_expenditure_form_month_total_base_value: @month_total.to_f,
         action: [
           "actual-expenditure-form:success->expenditure-month-chart#applyTally",
           "actual-expenditure-form:success->expenditure-live-category-summary#applySpent",
-          "reset->expenditure-live-category-summary#recalc"
+          "reset->expenditure-live-category-summary#recalc",
+          "reset->actual-expenditure-form#resetMonthTotalPreview"
         ].join(" ")
       }
     ) do
