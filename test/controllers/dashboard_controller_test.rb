@@ -28,6 +28,8 @@ class DashboardControllerTest < ActionDispatch::IntegrationTest
       assert_includes response.body, 'data-actual-expenditure-form-target="monthTotal"'
       assert_includes response.body, 'data-expenditure-mobile-sticky-summary-target="summaryHeader"'
       assert_includes response.body, "flex-nowrap"
+      assert_includes response.body, "input->expenditure-live-category-summary#recalc"
+      assert_includes response.body, "actual_expenditure_actual_amount"
     end
   end
 
