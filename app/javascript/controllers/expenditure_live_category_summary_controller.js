@@ -136,30 +136,27 @@ export default class extends Controller {
   #setDisplay(budget, expense, remain, hasCategory) {
     const fmt = (n) => this.#formatTwd(n);
 
-    if (this.hasBudgetAmountTarget) {
-      this.budgetAmountTarget.textContent = hasCategory ? fmt(budget) : fmt(0);
-    }
-    if (this.hasExpenseAmountTarget) {
-      this.expenseAmountTarget.textContent = hasCategory ? fmt(expense) : fmt(0);
-    }
-    if (this.hasRemainAmountTarget) {
-      this.remainAmountTarget.textContent = hasCategory ? fmt(remain) : fmt(0);
-      this.remainAmountTarget.classList.remove(
-        "text-emerald-600",
-        "dark:text-emerald-400",
-        "text-destructive"
-      );
+    // Desktop + mobile both declare these targets; update every match (singular Target is first in DOM only).
+    this.budgetAmountTargets.forEach((el) => {
+      el.textContent = hasCategory ? fmt(budget) : fmt(0);
+    });
+    this.expenseAmountTargets.forEach((el) => {
+      el.textContent = hasCategory ? fmt(expense) : fmt(0);
+    });
+    this.remainAmountTargets.forEach((el) => {
+      el.textContent = hasCategory ? fmt(remain) : fmt(0);
+      el.classList.remove("text-emerald-600", "dark:text-emerald-400", "text-destructive");
       if (hasCategory) {
         if (remain > 0) {
-          this.remainAmountTarget.classList.add("text-emerald-600", "dark:text-emerald-400");
+          el.classList.add("text-emerald-600", "dark:text-emerald-400");
         } else if (remain < 0) {
-          this.remainAmountTarget.classList.add("text-destructive");
+          el.classList.add("text-destructive");
         }
       }
-    }
-    if (this.hasRemainLabelTarget) {
-      this.remainLabelTarget.textContent = "餘額";
-    }
+    });
+    this.remainLabelTargets.forEach((el) => {
+      el.textContent = "餘額";
+    });
   }
 
   #formatTwd(n) {
