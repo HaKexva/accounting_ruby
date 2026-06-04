@@ -76,6 +76,7 @@ export default class extends Controller {
       this.monthCountTarget.textContent = `${count} 筆`;
     }
     const total = Number(tally.total) || 0;
+    this.monthTotalBaseValue = total;
     this.#applyMonthTotal(total);
   }
 
