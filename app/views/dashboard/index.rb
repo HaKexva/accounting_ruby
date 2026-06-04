@@ -313,15 +313,7 @@ class Views::Dashboard::Index < Views::Base
             required: true,
             prompt: "請選擇",
             form: ACTUAL_EXPENDITURE_FORM_ID,
-            native_select: {
-              data: {
-                action: [
-                  "change->ruby-ui--form-field#onChange",
-                  "invalid->ruby-ui--form-field#onInvalid",
-                  "change->expenditure-live-category-summary#recalc"
-                ].join(" ")
-              }
-            }
+            live_summary: true
           )
 
           expenditure_select_row(
@@ -395,29 +387,25 @@ class Views::Dashboard::Index < Views::Base
 
           expenditure_field_row(label: "實際消費金額（TWD）：", id: "actual_expenditure_actual_amount") do
             twd_amount_input(
+              live_summary: true,
               id: "actual_expenditure_actual_amount",
               name: "actual_expenditure[actual_amount]",
               form: ACTUAL_EXPENDITURE_FORM_ID,
               placeholder: "0",
               required: true,
-              data: {
-                expenditure_mobile_sticky_summary_target: "amountInput",
-                action: amount_live_summary_actions
-              }
+              data: { expenditure_mobile_sticky_summary_target: "amountInput" }
             )
           end
 
           expenditure_field_row(label: "列帳消費金額（TWD）：", id: "actual_expenditure_posted_amount") do
             twd_amount_input(
+              live_summary: true,
               id: "actual_expenditure_posted_amount",
               name: "actual_expenditure[posted_amount]",
               form: ACTUAL_EXPENDITURE_FORM_ID,
               placeholder: "0",
               required: true,
-              data: {
-                expenditure_mobile_sticky_summary_target: "amountInput",
-                action: amount_live_summary_actions
-              }
+              data: { expenditure_mobile_sticky_summary_target: "amountInput" }
             )
           end
 
@@ -455,12 +443,5 @@ class Views::Dashboard::Index < Views::Base
 
   def history_ym_params
     calendar_month_ym.present? ? { ym: calendar_month_ym } : {}
-  end
-
-  def amount_live_summary_actions
-    [
-      "input->expenditure-live-category-summary#recalc",
-      "change->expenditure-live-category-summary#recalc"
-    ].join(" ")
   end
 end
