@@ -4,8 +4,13 @@ import { Controller } from "@hotwired/stimulus";
 export default class extends Controller {
   static targets = ["mainForm", "status", "monthCount", "monthTotal"];
 
+  static values = {
+    monthTotalBase: { type: Number, default: 0 },
+  };
+
   connect() {
     this.mainFormTarget.addEventListener("submit", this.#handleSubmit);
+    this.#applyMonthTotal(this.monthTotalBaseValue);
   }
 
   disconnect() {
@@ -71,7 +76,16 @@ export default class extends Controller {
       this.monthCountTarget.textContent = `${count} 筆`;
     }
     const total = Number(tally.total) || 0;
+    this.monthTotalBaseValue = total;
     this.#applyMonthTotal(total);
+  }
+
+  previewMonthTotal(total) {
+    this.#applyMonthTotal(total);
+  }
+
+  resetMonthTotalPreview() {
+    this.#applyMonthTotal(this.monthTotalBaseValue);
   }
 
   #applyMonthTotal(total) {

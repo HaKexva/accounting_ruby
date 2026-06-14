@@ -51,6 +51,8 @@ export default class extends Controller {
   }
 
   recalc() {
+    this.#syncMonthTotalPreview();
+
     const category = this.#selectedCategory();
     if (!category) {
       this.#setDisplay(0, 0, 0, false);
@@ -140,6 +142,18 @@ export default class extends Controller {
     if (!el?.value) return 0;
     const n = parseFloat(String(el.value).replace(/,/g, ""));
     return Number.isFinite(n) ? n : 0;
+  }
+
+  #syncMonthTotalPreview() {
+    const formController = this.application.getControllerForElementAndIdentifier(
+      this.element,
+      "actual-expenditure-form"
+    );
+    if (!formController?.previewMonthTotal) return;
+
+    const base = Number(formController.monthTotalBaseValue) || 0;
+    const liveActual = this.#parseAmountEl(this.#field("actual_amount"));
+    formController.previewMonthTotal(base + liveActual);
   }
 
   #setDisplay(budget, expense, remain, hasCategory) {
