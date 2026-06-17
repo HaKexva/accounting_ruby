@@ -134,6 +134,15 @@ class Views::Dashboard::History < Views::Base
         end
       end
 
+      NativeSelect(
+        name: "sort",
+        aria: { label: "排序" }
+      ) do
+        history_sort_options.each do |value, label|
+          NativeSelectOption(value: value, selected: history_sort_selected?(value)) { plain label }
+        end
+      end
+
       div(class: "grid grid-cols-2 gap-2") do
         Input(
           name: "date_from",
@@ -231,14 +240,7 @@ class Views::Dashboard::History < Views::Base
     p(class: "mt-1 text-base font-semibold text-foreground truncate") do
       item_title(expenditure)
     end
-    if expenditure.category.present?
-      span(
-        class: [
-          "mt-2 inline-block max-w-full truncate rounded-md border border-border/60",
-          "bg-muted/40 px-2 py-0.5 text-xs text-muted-foreground"
-        ].join(" ")
-      ) { expenditure.category }
-    end
+    history_meta_chips(expenditure)
     p(class: "mt-2 text-sm font-semibold tabular-nums text-destructive") do
       plain "NT$ #{format_decimal(expenditure.posted_amount)}"
     end
@@ -474,6 +476,7 @@ class Views::Dashboard::History < Views::Base
       transaction_date: expenditure.transaction_date.iso8601,
       transaction_item: expenditure.transaction_item,
       category: expenditure.category,
+      payment_summary: expenditure.payment_summary,
       payment_method: expenditure.payment_method,
       credit_card_payment_method: expenditure.credit_card_payment_method,
       payment_timing: expenditure.payment_timing,
@@ -482,6 +485,41 @@ class Views::Dashboard::History < Views::Base
       posted_amount: format_decimal(expenditure.posted_amount),
       note: expenditure.note.to_s
     }
+  end
+
+  def history_sort_options
+    {
+      "date_desc" => "日期（新→舊）",
+      "date_asc" => "日期（舊→新）",
+      "amount_desc" => "金額（高→低）",
+      "amount_asc" => "金額（低→高）"
+    }
+  end
+
+  def history_sort_selected?(value)
+    selected = @filters[:sort].presence || DashboardController::HISTORY_DEFAULT_SORT
+    selected.to_s == value
+  end
+
+  def history_meta_chips(expenditure)
+    chips = []
+    chips << expenditure.category if expenditure.category.present?
+    payment = expenditure.payment_summary
+    chips << payment if payment.present?
+    return if chips.empty?
+
+    div(class: "mt-2 flex flex-wrap gap-1.5") do
+      chips.each { |text| history_meta_chip(text) }
+    end
+  end
+
+  def history_meta_chip(text)
+    span(
+      class: [
+        "inline-block max-w-full truncate rounded-md border border-border/60",
+        "bg-muted/40 px-2 py-0.5 text-xs text-muted-foreground"
+      ].join(" ")
+    ) { plain text }
   end
 
   def item_title(expenditure)

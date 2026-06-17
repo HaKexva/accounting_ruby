@@ -168,6 +168,7 @@ class ActualExpendituresController < ApplicationController
       transaction_date: record.transaction_date.iso8601,
       transaction_item: record.transaction_item,
       category: record.category,
+      payment_summary: record.payment_summary,
       payment_method: record.payment_method,
       credit_card_payment_method: record.credit_card_payment_method,
       payment_timing: record.payment_timing,
