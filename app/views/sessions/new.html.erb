@@ -43,9 +43,11 @@
     <% else %>
       <div class="rounded-xl border border-amber-500/35 bg-amber-500/[0.08] px-4 py-3 text-sm leading-relaxed text-foreground">
         <p class="font-medium">尚未設定 Google 登入</p>
-        <p class="mt-1 text-muted-foreground">請在環境變數設定 GOOGLE_CLIENT_ID 與 GOOGLE_CLIENT_SECRET。</p>
+        <p class="mt-1 text-muted-foreground">
+          請在 Railway 設定 GOOGLE_CLIENT_ID 與 GOOGLE_CLIENT_SECRET，並在 Google Cloud Console 加入授權重新導向 URI。
+        </p>
         <% if @trial_login_enabled %>
-          <p class="mt-2 text-muted-foreground">本機開發可改用下方試用帳號。</p>
+          <p class="mt-2 text-muted-foreground">設定完成前，可使用下方試用帳號進入。</p>
         <% end %>
       </div>
     <% end %>
@@ -57,7 +59,7 @@
         <div class="h-px flex-1 bg-border/80"></div>
       </div>
 
-      <%= button_to "以試用帳號繼續（本機）",
+      <%= button_to "以試用帳號繼續",
             trial_login_path,
             method: :post,
             form: { class: "w-full" },

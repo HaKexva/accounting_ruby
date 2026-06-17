@@ -13,7 +13,7 @@ class SessionsController < ApplicationController
 
   def trial
     unless allow_anonymous_trial?
-      redirect_to login_path, alert: "試用登入僅限本機開發環境。"
+      redirect_to login_path, alert: "目前需使用 Google 登入。"
       return
     end
 
