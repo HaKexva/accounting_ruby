@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 # When a taxonomy label is renamed in settings, update denormalized name columns
-# on that user's expenditures and budgets (including expense history).
+# on the current calendar month's expenditures and budgets for that user.
 class ExpenditureTaxonomyRenamePropagator
   COLUMN_MAPPINGS = {
     "category" => [
@@ -33,8 +33,13 @@ class ExpenditureTaxonomyRenamePropagator
     mappings = COLUMN_MAPPINGS[@kind]
     return 0 if mappings.blank?
 
+    calendar_month = CalendarMonth.find_or_create_by!(
+      year: Time.zone.today.year,
+      month: Time.zone.today.month
+    )
+
     mappings.sum do |model, column|
-      model.where(user: @user)
+      model.where(user: @user, calendar_month: calendar_month)
            .where(column => @from)
            .update_all(column => @to, updated_at: Time.current) # rubocop:disable Rails/SkipsModelValidations
     end

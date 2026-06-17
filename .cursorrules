@@ -1,0 +1,5 @@
+# Hpees Shelf — Cursor
+
+**Full agent instructions:** see **`AGENTS.md`** (Cursor project agent file — same role as **`CLAUDE.md`** in Claude Code).
+
+**Git:** do not commit or push directly to **`main`**. Use a **branch** and **pull request**; merge via GitHub.

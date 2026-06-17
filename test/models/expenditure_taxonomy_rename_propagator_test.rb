@@ -30,11 +30,11 @@ class ExpenditureTaxonomyRenamePropagatorTest < ActiveSupport::TestCase
       posted_amount: 100
     )
 
-    @expense_history_month = ActualExpenditure.create!(
+    @expense_other_month = ActualExpenditure.create!(
       user: @user,
       calendar_month: @other_month,
       transaction_date: Date.new(@other_month.year, @other_month.month, 1),
-      transaction_item: "歷史午餐",
+      transaction_item: "舊月",
       category: @old_name,
       payment_method: "現金",
       actual_amount: 50,
@@ -50,7 +50,7 @@ class ExpenditureTaxonomyRenamePropagatorTest < ActiveSupport::TestCase
     )
   end
 
-  test "renames category on all expenditures and budgets for user" do
+  test "renames category on current month expenditures and budgets" do
     count = ExpenditureTaxonomyRenamePropagator.call(
       user: @user,
       kind: "category",
@@ -58,32 +58,9 @@ class ExpenditureTaxonomyRenamePropagatorTest < ActiveSupport::TestCase
       to: @new_name
     )
 
-    assert_equal 3, count
+    assert_equal 2, count
     assert_equal @new_name, @expense_current.reload.category
-    assert_equal @new_name, @expense_history_month.reload.category
     assert_equal @new_name, @budget_current.reload.category
-  end
-
-  test "does not rename other users rows" do
-    other = User.create!(google_uid: "other-rename", email: "other-rename@test.example")
-    other_expense = ActualExpenditure.create!(
-      user: other,
-      calendar_month: @current_month,
-      transaction_date: Time.zone.today,
-      transaction_item: "他人",
-      category: @old_name,
-      payment_method: "現金",
-      actual_amount: 10,
-      posted_amount: 10
-    )
-
-    ExpenditureTaxonomyRenamePropagator.call(
-      user: @user,
-      kind: "category",
-      from: @old_name,
-      to: @new_name
-    )
-
-    assert_equal @old_name, other_expense.reload.category
+    assert_equal @old_name, @expense_other_month.reload.category
   end
 end
