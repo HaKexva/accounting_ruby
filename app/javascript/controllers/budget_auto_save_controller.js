@@ -1,24 +1,17 @@
 import { Controller } from "@hotwired/stimulus";
 
-/** Debounced auto-save for budget cards (POST create or PATCH update). */
+/** Manual save for budget cards (no autosave). */
 export default class extends Controller {
-  static targets = ["budgetForm", "status", "deleteSlot", "discardButton"];
+  static targets = ["budgetForm", "status", "deleteSlot", "discardButton", "saveButton"];
   static values = {
     memberPrefix: String,
-    debounce: { type: Number, default: 650 },
     discardConfirm: { type: String, default: "確定捨棄尚未儲存的內容？" },
     recordId: Number,
   };
 
   connect() {
-    this._timer = null;
     this._saving = false;
     this.initialSnapshot = this.#snapshot(this.budgetFormTarget);
-  }
-
-  scheduleSave() {
-    clearTimeout(this._timer);
-    this._timer = setTimeout(() => this.save(), this.debounceValue);
   }
 
   discardUnsaved(event) {
@@ -29,6 +22,11 @@ export default class extends Controller {
     this.budgetFormTarget.reset();
     this.initialSnapshot = this.#snapshot(this.budgetFormTarget);
     this.#setStatus("");
+  }
+
+  saveFromButton(event) {
+    event.preventDefault();
+    this.save();
   }
 
   async save() {
@@ -87,7 +85,7 @@ export default class extends Controller {
       }
 
       this.initialSnapshot = this.#snapshot(form);
-      this.#setStatus("已自動儲存");
+      this.#setStatus("已儲存");
       window.setTimeout(() => {
         if (this.#snapshot(form) === this.initialSnapshot) this.#setStatus("");
       }, 2000);
@@ -172,9 +170,11 @@ export default class extends Controller {
 
     embla.reInit();
     requestAnimationFrame(() => {
-      const snaps = embla.scrollSnapList();
-      const last = Math.max(0, snaps.length - 1);
-      carouselCtrl.scrollToIndex(last);
+      const slides = embla.slideNodes();
+      const index = slides.indexOf(slideEl);
+      if (index >= 0) {
+        carouselCtrl.scrollToIndex(index);
+      }
     });
   }
 

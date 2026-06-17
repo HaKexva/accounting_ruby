@@ -50,9 +50,16 @@ module Authentication
     request.present? && LocalHostAccess.localhost_host?(request.host)
   end
 
-  # Development or browser on localhost: no login screen, automatic trial user.
+  # No Google credentials yet (e.g. Railway before env vars are set).
+  def oauth_login_required?
+    GoogleOauth.configured?
+  end
+
+  # Development, localhost, or deploy without OAuth: automatic trial user.
   def skip_login_page?
-    !Rails.env.test? && (Rails.env.local? || localhost_request?)
+    return false if Rails.env.test?
+
+    !oauth_login_required? || Rails.env.local? || localhost_request?
   end
 
   def allow_anonymous_trial?

@@ -1,0 +1,23 @@
+name: Bundle install
+description: Restore gem cache and bundle install (no ruby/setup-ruby action)
+
+runs:
+  using: composite
+  steps:
+    - name: Prepare Bundler
+      shell: bash
+      run: |
+        gem install bundler
+        bundle config set --local path 'vendor/bundle'
+
+    - name: Restore gem cache
+      uses: actions/cache@v4
+      with:
+        path: vendor/bundle
+        key: bundle-${{ runner.os }}-${{ hashFiles('Gemfile.lock') }}
+        restore-keys: |
+          bundle-${{ runner.os }}-
+
+    - name: Install gems
+      shell: bash
+      run: bundle install --jobs 4 --retry 3
