@@ -53,13 +53,12 @@ class Views::Dashboard::Index < Views::Base
         ].join(" ")
       }
     ) do
-      div(class: "hidden lg:block #{PAGE_TOP_STICKY} border-border/50") do
+      div(class: "#{PAGE_TOP_STICKY} border-border/50 max-lg:!space-y-0 max-lg:!pb-3") do
         header_row
       end
 
       div(class: PAGE_SPLIT_GRID_CLASS) do
         div(class: PAGE_SPLIT_LEFT_STICKY_CLASS) do
-          div(class: "shrink-0 lg:hidden") { header_row }
           div(class: "min-h-0 flex-1 overflow-y-auto overscroll-contain lg:overflow-visible lg:flex-none") do
             div(
               class: "relative min-h-0 lg:contents",

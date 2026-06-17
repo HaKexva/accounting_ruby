@@ -8,6 +8,14 @@ class DashboardControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
   end
 
+  test "index pins 實際支出 page title at top while scrolling" do
+    get root_path
+    assert_response :success
+    assert_equal 1, response.body.scan(/<h1[^>]*>實際支出<\/h1>/).size
+    assert_includes response.body, "sticky top-0 z-20"
+    assert_not_includes response.body, "shrink-0 lg:hidden"
+  end
+
   test "index includes live category summary" do
     travel_to Time.zone.local(2026, 5, 15, 12, 0, 0) do
       get root_path
