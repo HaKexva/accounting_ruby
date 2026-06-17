@@ -84,4 +84,4 @@ gem "tailwind_merge", "~> 1.4"
 gem "rouge", "~> 4.7"
 
 gem "omniauth-google-oauth2", "~> 1.2"
-gem "omniauth-rails_csrf_protection", "~> 1.0"
+gem "omniauth-rails_csrf_protection", "~> 2.0"
