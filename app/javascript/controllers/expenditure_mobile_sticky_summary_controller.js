@@ -27,16 +27,14 @@ export default class extends Controller {
   #scrollTimer = null;
   #pinnedClass = [
     "fixed",
-    "z-[60]",
+    "z-20",
     "left-0",
     "right-0",
     "w-full",
     "max-w-none",
     "border-b",
     "border-border/60",
-    "bg-background/95",
-    "backdrop-blur-md",
-    "supports-[backdrop-filter]:bg-background/90",
+    "bg-background",
     "shadow-md",
     "px-4",
     "pb-3",
@@ -218,9 +216,10 @@ export default class extends Controller {
   #updatePinnedTop() {
     if (!this.#pinned) return;
     const panel = this.stickyPanelTarget;
+    const headerH = Math.ceil(this.#headerBottom());
     const vv = window.visualViewport;
     if (vv && this.#keyboardLikely()) {
-      panel.style.top = `${vv.offsetTop}px`;
+      panel.style.top = `${Math.max(vv.offsetTop, headerH)}px`;
     } else {
       panel.style.top = `${this.#headerBottom()}px`;
     }

@@ -77,9 +77,10 @@ class Views::Base < Components::Base
     "shrink-0 space-y-2 pb-2 sm:space-y-2 sm:pb-3",
     "max-lg:max-h-[min(35svh,20rem)] max-lg:sm:max-h-[38svh]",
     "min-h-0 flex flex-col overflow-hidden",
-    "max-lg:bg-background",
+    "max-lg:isolate max-lg:bg-background",
     "lg:sticky lg:top-4 lg:z-[1] lg:self-start lg:max-h-[calc(100dvh-6rem)] lg:overflow-y-auto lg:pr-1",
-    "lg:mx-0 lg:px-0"
+    "lg:border-0 lg:bg-transparent lg:backdrop-blur-none lg:supports-[backdrop-filter]:bg-transparent",
+    "lg:mx-0 lg:px-0 lg:!space-y-0 lg:!pb-0 lg:shadow-none"
   ].join(" ")
 
   PAGE_SPLIT_RIGHT_BODY_CLASS = [

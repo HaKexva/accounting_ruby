@@ -156,4 +156,17 @@
       radial-gradient(ellipse 80% 50% at 50% -20%, oklch(0.94 0.04 195 / 0.35), transparent),
       radial-gradient(ellipse 60% 40% at 100% 0%, oklch(0.96 0.03 240 / 0.5), transparent);
   }
+
+  /* Fill the status-bar inset so overscroll does not show page content above the mobile header. */
+  @media (max-width: 1023px) {
+    #app-mobile-header::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: calc(-1 * env(safe-area-inset-top, 0px));
+      height: env(safe-area-inset-top, 0px);
+      background-color: var(--background);
+    }
+  }
 }
