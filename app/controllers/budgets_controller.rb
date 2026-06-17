@@ -1,22 +1,32 @@
 # frozen_string_literal: true
 
 class BudgetsController < ApplicationController
+  include CalendarMonthResolution
+
   before_action :set_budget_context, only: %i[
     create_revenue_budget update_revenue_budget destroy_revenue_budget
     create_expenditure_budget update_expenditure_budget destroy_expenditure_budget
   ]
 
   def index
-    user = trial_account_owner
-    revenue_budgets, expenditure_budgets, calendar_month = budget_index_state
+    @user = trial_account_owner
+    unless @user
+      redirect_to login_path, alert: "請先登入。"
+      return
+    end
+
+    revenue_budgets, expenditure_budgets, calendar_month = budget_index_state_for(@user)
+    month_choices = calendar_month_choices_for(@user, selected: calendar_month)
     focus = carousel_focus_from_params(revenue_budgets, expenditure_budgets)
 
-    taxonomy = ExpenditureTaxonomy.for_user(user)
+    taxonomy = ExpenditureTaxonomy.for_user(@user)
+    response.headers["Turbo-Cache-Control"] = "no-cache"
 
     render Views::Budgets::Index.new(
       revenue_budgets: revenue_budgets,
       expenditure_budgets: expenditure_budgets,
       calendar_month: calendar_month,
+      month_choices: month_choices,
       initial_budget_kind: focus.fetch(:kind),
       revenue_carousel_initial_index: focus[:revenue_index],
       expenditure_carousel_initial_index: focus[:expenditure_index],
@@ -25,16 +35,16 @@ class BudgetsController < ApplicationController
   end
 
   def create_revenue_budget
-    budget = @calendar_month.revenue_budgets.build(revenue_budget_attributes.merge(user: @user))
+    budget = revenue_scope.build(revenue_budget_attributes)
     if budget.save
       respond_to do |format|
         format.json { render json: { ok: true, id: budget.id } }
-        format.html { redirect_to budgets_path, notice: "已儲存收入預算。" }
+        format.html { redirect_to budgets_return_path, notice: "已儲存收入預算。" }
       end
     else
       respond_to do |format|
         format.json { render json: { ok: false, errors: budget.errors.full_messages }, status: :unprocessable_entity }
-        format.html { redirect_to budgets_path, alert: budget.errors.full_messages.to_sentence.presence || "無法儲存收入預算。" }
+        format.html { redirect_to budgets_return_path, alert: budget.errors.full_messages.to_sentence.presence || "無法儲存收入預算。" }
       end
     end
   end
@@ -44,13 +54,13 @@ class BudgetsController < ApplicationController
     if budget.update(revenue_budget_attributes)
       respond_to do |format|
         format.json { render json: { ok: true, id: budget.id } }
-        format.html { redirect_to budgets_path, notice: "已更新收入預算。" }
+        format.html { redirect_to budgets_return_path, notice: "已更新收入預算。" }
       end
     else
       respond_to do |format|
         format.json { render json: { ok: false, errors: budget.errors.full_messages }, status: :unprocessable_entity }
         format.html do
-          redirect_to budgets_path(revenue_focus: budget.id),
+          redirect_to budgets_return_path(revenue_focus: budget.id),
                       alert: budget.errors.full_messages.to_sentence.presence || "無法更新收入預算。"
         end
       end
@@ -58,32 +68,32 @@ class BudgetsController < ApplicationController
   rescue ActiveRecord::RecordNotFound
     respond_to do |format|
       format.json { render json: { ok: false, errors: [ "找不到此筆收入預算。" ] }, status: :not_found }
-      format.html { redirect_to budgets_path, alert: "找不到此筆收入預算。" }
+      format.html { redirect_to budgets_return_path, alert: "找不到此筆收入預算。" }
     end
   end
 
   def destroy_revenue_budget
     budget = revenue_scope.find(params[:id])
     if budget.destroy
-      redirect_to budgets_path, notice: "已刪除收入預算。"
+      redirect_to budgets_return_path, notice: "已刪除收入預算。"
     else
-      redirect_to budgets_path, alert: "無法刪除此筆收入預算。"
+      redirect_to budgets_return_path, alert: "無法刪除此筆收入預算。"
     end
   rescue ActiveRecord::RecordNotFound
-    redirect_to budgets_path, alert: "找不到此筆收入預算。"
+    redirect_to budgets_return_path, alert: "找不到此筆收入預算。"
   end
 
   def create_expenditure_budget
-    budget = @calendar_month.expenditure_budgets.build(expenditure_budget_attributes.merge(user: @user))
+    budget = expenditure_scope.build(expenditure_budget_attributes)
     if budget.save
       respond_to do |format|
         format.json { render json: { ok: true, id: budget.id } }
-        format.html { redirect_to budgets_path, notice: "已儲存支出預算。" }
+        format.html { redirect_to budgets_return_path, notice: "已儲存支出預算。" }
       end
     else
       respond_to do |format|
         format.json { render json: { ok: false, errors: budget.errors.full_messages }, status: :unprocessable_entity }
-        format.html { redirect_to budgets_path, alert: budget.errors.full_messages.to_sentence.presence || "無法儲存支出預算。" }
+        format.html { redirect_to budgets_return_path, alert: budget.errors.full_messages.to_sentence.presence || "無法儲存支出預算。" }
       end
     end
   end
@@ -93,13 +103,13 @@ class BudgetsController < ApplicationController
     if budget.update(expenditure_budget_attributes)
       respond_to do |format|
         format.json { render json: { ok: true, id: budget.id } }
-        format.html { redirect_to budgets_path, notice: "已更新支出預算。" }
+        format.html { redirect_to budgets_return_path, notice: "已更新支出預算。" }
       end
     else
       respond_to do |format|
         format.json { render json: { ok: false, errors: budget.errors.full_messages }, status: :unprocessable_entity }
         format.html do
-          redirect_to budgets_path(expenditure_focus: budget.id),
+          redirect_to budgets_return_path(expenditure_focus: budget.id),
                       alert: budget.errors.full_messages.to_sentence.presence || "無法更新支出預算。"
         end
       end
@@ -107,19 +117,19 @@ class BudgetsController < ApplicationController
   rescue ActiveRecord::RecordNotFound
     respond_to do |format|
       format.json { render json: { ok: false, errors: [ "找不到此筆支出預算。" ] }, status: :not_found }
-      format.html { redirect_to budgets_path, alert: "找不到此筆支出預算。" }
+      format.html { redirect_to budgets_return_path, alert: "找不到此筆支出預算。" }
     end
   end
 
   def destroy_expenditure_budget
     budget = expenditure_scope.find(params[:id])
     if budget.destroy
-      redirect_to budgets_path, notice: "已刪除支出預算。"
+      redirect_to budgets_return_path, notice: "已刪除支出預算。"
     else
-      redirect_to budgets_path, alert: "無法刪除此筆支出預算。"
+      redirect_to budgets_return_path, alert: "無法刪除此筆支出預算。"
     end
   rescue ActiveRecord::RecordNotFound
-    redirect_to budgets_path, alert: "找不到此筆支出預算。"
+    redirect_to budgets_return_path, alert: "找不到此筆支出預算。"
   end
 
   private
@@ -153,34 +163,41 @@ class BudgetsController < ApplicationController
     end
   end
 
-  def budget_index_state
-    user = trial_account_owner
-    return [ [], [], nil ] unless user
-
-    today = Time.zone.today
-    calendar_month = CalendarMonth.find_or_create_by!(year: today.year, month: today.month)
-    revenue_budgets = RevenueBudget.where(calendar_month: calendar_month).order(:id).to_a
-    expenditure_budgets = ExpenditureBudget.where(calendar_month: calendar_month).order(:id).to_a
+  def budget_index_state_for(user)
+    calendar_month = calendar_month_from_params
+    revenue_budgets = revenue_scope_for(user, calendar_month).order(:id).to_a
+    expenditure_budgets = expenditure_scope_for(user, calendar_month).order(:id).to_a
     [ revenue_budgets, expenditure_budgets, calendar_month ]
   end
 
   def set_budget_context
     @user = trial_account_owner
     unless @user
-      redirect_to budgets_path, alert: "無法準備試用環境，請稍後再試。"
+      redirect_to budgets_return_path, alert: "無法準備試用環境，請稍後再試。"
       return
     end
 
-    today = Time.zone.today
-    @calendar_month = CalendarMonth.find_or_create_by!(year: today.year, month: today.month)
+    @calendar_month = calendar_month_from_params
+  end
+
+  def budgets_return_path(**extra)
+    budgets_path(**ym_query_params, **extra)
   end
 
   def revenue_scope
-    RevenueBudget.where(calendar_month: @calendar_month, user: @user)
+    revenue_scope_for(@user, @calendar_month)
   end
 
   def expenditure_scope
-    ExpenditureBudget.where(calendar_month: @calendar_month, user: @user)
+    expenditure_scope_for(@user, @calendar_month)
+  end
+
+  def revenue_scope_for(user, calendar_month)
+    RevenueBudget.where(user: user, calendar_month: calendar_month)
+  end
+
+  def expenditure_scope_for(user, calendar_month)
+    ExpenditureBudget.where(user: user, calendar_month: calendar_month)
   end
 
   def revenue_budget_attributes

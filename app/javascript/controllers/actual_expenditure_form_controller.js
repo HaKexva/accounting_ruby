@@ -2,10 +2,15 @@ import { Controller } from "@hotwired/stimulus";
 
 /** POST 實際支出（JSON），更新本月摘要與圓餅圖。 */
 export default class extends Controller {
-  static targets = ["mainForm", "status", "monthCount"];
+  static targets = ["mainForm", "status", "monthCount", "monthTotal"];
+
+  static values = {
+    monthTotalBase: { type: Number, default: 0 },
+  };
 
   connect() {
     this.mainFormTarget.addEventListener("submit", this.#handleSubmit);
+    this.#applyMonthTotal(this.monthTotalBaseValue);
   }
 
   disconnect() {
@@ -54,7 +59,10 @@ export default class extends Controller {
       this.dispatch("success", {
         prefix: "actual-expenditure-form",
         bubbles: true,
-        detail: { by_category: json.month_tally?.by_category ?? {} },
+        detail: {
+          by_category: json.month_tally?.by_category ?? {},
+          month_tally: json.month_tally ?? null,
+        },
       });
     } catch {
       this.#setStatus("連線失敗");
@@ -67,6 +75,34 @@ export default class extends Controller {
     if (this.hasMonthCountTarget) {
       this.monthCountTarget.textContent = `${count} 筆`;
     }
+    const total = Number(tally.total) || 0;
+    this.monthTotalBaseValue = total;
+    this.#applyMonthTotal(total);
+  }
+
+  previewMonthTotal(total) {
+    this.#applyMonthTotal(total);
+  }
+
+  resetMonthTotalPreview() {
+    this.#applyMonthTotal(this.monthTotalBaseValue);
+  }
+
+  #applyMonthTotal(total) {
+    const formatted = this.#formatTwd(total);
+    if (this.hasMonthTotalTarget) {
+      this.monthTotalTargets.forEach((el) => {
+        el.textContent = formatted;
+      });
+      return;
+    }
+    const fallback = document.getElementById("dashboard_month_total");
+    if (fallback) fallback.textContent = formatted;
+  }
+
+  #formatTwd(n) {
+    const v = Math.round(Number(n) || 0);
+    return `NT$${v.toLocaleString("zh-TW")}`;
   }
 
   #setStatus(text) {

@@ -63,5 +63,4 @@ class ExpenditureTaxonomyRenamePropagatorTest < ActiveSupport::TestCase
     assert_equal @new_name, @budget_current.reload.category
     assert_equal @old_name, @expense_other_month.reload.category
   end
-
 end

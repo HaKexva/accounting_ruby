@@ -7,18 +7,22 @@ class Views::Dashboard::Index < Views::Base
 
   def initialize(
     calendar_month:,
+    month_choices:,
     month_total:,
     month_count:,
     category_amounts:,
     category_budgets:,
+    expenditure_budget_total:,
     revenue_total:,
     taxonomy:
   )
     @calendar_month = calendar_month
+    @month_choices = month_choices
     @month_total = month_total
     @month_count = month_count
     @category_amounts = category_amounts
     @category_budgets = category_budgets
+    @expenditure_budget_total = expenditure_budget_total
     @revenue_total = revenue_total
     @taxonomy = taxonomy
   end
@@ -40,20 +44,21 @@ class Views::Dashboard::Index < Views::Base
         expenditure_month_chart_category_order_value: @taxonomy.categories.to_json,
         expenditure_live_category_summary_budgets_value: category_budgets_json,
         expenditure_live_category_summary_spent_value: chart_categories_json,
+        actual_expenditure_form_month_total_base_value: @month_total.to_f,
         action: [
           "actual-expenditure-form:success->expenditure-month-chart#applyTally",
           "actual-expenditure-form:success->expenditure-live-category-summary#applySpent",
-          "reset->expenditure-live-category-summary#recalc"
+          "reset->expenditure-live-category-summary#recalc",
+          "reset->actual-expenditure-form#resetMonthTotalPreview"
         ].join(" ")
       }
     ) do
-      div(class: "hidden shrink-0 border-b border-border/50 pb-3 lg:block lg:pb-4") do
+      div(class: "#{PAGE_TOP_STICKY} border-border/50 max-lg:!space-y-0 max-lg:!pb-3") do
         header_row
       end
 
       div(class: PAGE_SPLIT_GRID_CLASS) do
         div(class: PAGE_SPLIT_LEFT_STICKY_CLASS) do
-          div(class: "shrink-0 lg:hidden") { header_row }
           div(class: "min-h-0 flex-1 overflow-y-auto overscroll-contain lg:overflow-visible lg:flex-none") do
             div(
               class: "relative min-h-0 lg:contents",
@@ -92,53 +97,45 @@ class Views::Dashboard::Index < Views::Base
 
   def header_row
     page_header(title: "實際支出", subtitle: "登錄本月支出並即時查看預算餘額") do
-      Link(href: expense_history_path, variant: :outline, size: :md) { "歷史紀錄" }
+      Link(href: expense_history_path(**history_ym_params), variant: :outline, size: :md) { "歷史紀錄" }
     end
   end
 
   def month_data_panel
     section(class: "#{MONTH_SUMMARY_SECTION_CLASS}", aria: { label: "本月實際支出摘要" }) do
-      div(class: MONTH_SUMMARY_HEADER_CLASS) do
+      div(
+        class: MONTH_SUMMARY_HEADER_CLASS,
+        data: { expenditure_mobile_sticky_summary_target: "summaryHeader" }
+      ) do
         div(class: "flex flex-col gap-1") do
           div(class: "flex items-baseline justify-between gap-2") do
-            h2(class: MONTH_SUMMARY_TITLE_CLASS) { "本月摘要" }
-            span(class: "#{MONTH_SUMMARY_PERIOD_CLASS} shrink-0 whitespace-nowrap text-right") do
-              plain calendar_month_label
-              plain " · "
+            h2(class: MONTH_SUMMARY_TITLE_CLASS) { "月份摘要" }
+            div(class: "flex shrink-0 items-center gap-1.5 whitespace-nowrap text-right") do
+              calendar_month_selector(
+                month_choices: @month_choices,
+                calendar_month: @calendar_month,
+                url: root_path,
+                select_id: "dashboard_calendar_month"
+              )
+              span(class: MONTH_SUMMARY_PERIOD_CLASS) { plain "·" }
               span(
-                class: "tabular-nums",
+                class: "tabular-nums #{MONTH_SUMMARY_PERIOD_CLASS}",
                 data: { actual_expenditure_form_target: "monthCount" }
               ) { plain "#{@month_count} 筆" }
             end
           end
-          p(class: "text-[11px] leading-snug text-muted-foreground sm:text-xs") do
+          p(
+            class: "text-[11px] leading-snug text-muted-foreground sm:text-xs",
+            data: { expenditure_mobile_sticky_summary_target: "summaryHint" }
+          ) do
             plain "依目前選擇的消費類別（預算來自本月支出預算）"
           end
         end
       end
       div(class: MONTH_SUMMARY_BODY_CLASS) do
-        div(class: MONTH_SUMMARY_STATS_ROW_CLASS) do
-          category_summary_chip(
-            label: "預算",
-            target: "budgetAmount",
-            initial: "NT$0",
-            accent: :budget
-          )
-          category_summary_chip(
-            label: "支出",
-            target: "expenseAmount",
-            initial: "NT$0",
-            accent: :expense
-          )
-          category_summary_chip(
-            label: "餘額",
-            target: "remainAmount",
-            label_target: "remainLabel",
-            initial: "NT$0",
-            accent: :remain
-          )
-        end
-        div(class: CHART_PANEL_CLASS) do
+        desktop_summary_squares
+        mobile_category_stat_squares
+        div(class: CHART_PANEL_CLASS, data: { expenditure_mobile_sticky_summary_target: "chartPanel" }) do
           p(class: "shrink-0 text-center text-xs font-medium text-foreground") { "本月消費支出結構" }
           p(class: "shrink-0 text-center text-[11px] leading-snug text-muted-foreground sm:text-xs") do
             plain "各類別同色：淺色＝尚未使用預算、深色＝已使用；另含預算收入－預算支出（占比以收入預算合計為分母）"
@@ -163,15 +160,98 @@ class Views::Dashboard::Index < Views::Base
     end
   end
 
+  def desktop_summary_squares
+    div(class: DESKTOP_SUMMARY_GRID_CLASS) do
+      div(class: desktop_summary_square_class(accent: :remain)) do
+        p(class: "text-[11px] font-semibold text-foreground sm:text-xs") { "類別統計" }
+        div(class: "mt-1 min-w-0 space-y-0.5") do
+          desktop_category_stat_line(label: "預算", target: "budgetAmount")
+          desktop_category_stat_line(label: "支出", target: "expenseAmount")
+          desktop_category_stat_line(label: "餘額", target: "remainAmount", label_target: "remainLabel")
+        end
+      end
+
+      div(class: desktop_summary_square_class(accent: :budget)) do
+        p(class: "text-[11px] font-semibold text-foreground sm:text-xs") { "總預算" }
+        p(class: "mt-1 min-w-0 truncate text-sm font-semibold tabular-nums text-foreground sm:text-base") do
+          plain "NT$#{format_decimal(@expenditure_budget_total)}"
+        end
+        p(class: "mt-auto text-[10px] leading-snug text-muted-foreground") { "本月支出預算" }
+      end
+
+      div(class: desktop_summary_square_class(accent: :expense)) do
+        p(class: "text-[11px] font-semibold text-foreground sm:text-xs") { "總支出" }
+        p(
+          id: "dashboard_month_total",
+          class: "mt-1 min-w-0 truncate text-sm font-semibold tabular-nums text-foreground sm:text-base",
+          data: { actual_expenditure_form_target: "monthTotal" }
+        ) do
+          plain "NT$#{format_decimal(@month_total)}"
+        end
+        p(class: "mt-auto text-[10px] leading-snug text-muted-foreground") { "本月實際支出" }
+      end
+    end
+  end
+
+  def desktop_category_stat_line(label:, target:, label_target: nil)
+    p(class: "min-w-0 truncate text-[10px] text-muted-foreground sm:text-[11px]") do
+      if label_target
+        span(data: { expenditure_live_category_summary_target: label_target }) { label }
+      else
+        plain label
+      end
+      plain " "
+      span(
+        class: "font-semibold tabular-nums text-foreground",
+        data: { expenditure_live_category_summary_target: target }
+      ) { plain "NT$0" }
+    end
+  end
+
+  def mobile_category_stat_squares
+    div(
+      class: "lg:hidden #{MOBILE_CATEGORY_STATS_ROW_CLASS}",
+      data: { expenditure_mobile_sticky_summary_target: "statsRow" }
+    ) do
+      category_summary_chip(
+        label: "預算",
+        target: "budgetAmount",
+        initial: "NT$0",
+        accent: :budget
+      )
+      category_summary_chip(
+        label: "支出",
+        target: "expenseAmount",
+        initial: "NT$0",
+        accent: :expense
+      )
+      category_summary_chip(
+        label: "餘額",
+        target: "remainAmount",
+        label_target: "remainLabel",
+        initial: "NT$0",
+        accent: :remain
+      )
+    end
+  end
+
   def category_summary_chip(label:, target:, initial:, label_target: nil, accent: nil)
-    div(class: stat_chip_class(accent: accent)) do
+    div(
+      class: mobile_stat_chip_class(accent: accent),
+      data: { expenditure_mobile_sticky_summary_target: "chip" }
+    ) do
       p(
         class: STAT_CHIP_LABEL_CLASS,
-        data: (label_target ? { expenditure_live_category_summary_target: label_target } : {})
+        data: {
+          expenditure_mobile_sticky_summary_target: "chipLabel"
+        }.merge(label_target ? { expenditure_live_category_summary_target: label_target } : {})
       ) { label }
       p(
         class: STAT_CHIP_VALUE_CLASS,
-        data: { expenditure_live_category_summary_target: target }
+        data: {
+          expenditure_live_category_summary_target: target,
+          expenditure_mobile_sticky_summary_target: "chipValue"
+        }
       ) { plain initial }
     end
   end
@@ -195,6 +275,7 @@ class Views::Dashboard::Index < Views::Base
           }
         ) do
           input(type: "hidden", name: "authenticity_token", value: view_context.form_authenticity_token)
+          input(type: "hidden", name: "ym", value: calendar_month_ym)
 
           p(
             class: "hidden rounded-md border border-border/60 bg-muted/40 px-2 py-1.5 text-[11px] text-foreground",
@@ -233,15 +314,7 @@ class Views::Dashboard::Index < Views::Base
             required: true,
             prompt: "請選擇",
             form: ACTUAL_EXPENDITURE_FORM_ID,
-            native_select: {
-              data: {
-                action: [
-                  "change->ruby-ui--form-field#onChange",
-                  "invalid->ruby-ui--form-field#onInvalid",
-                  "change->expenditure-live-category-summary#recalc"
-                ].join(" ")
-              }
-            }
+            live_summary: true
           )
 
           expenditure_select_row(
@@ -315,6 +388,7 @@ class Views::Dashboard::Index < Views::Base
 
           expenditure_field_row(label: "實際消費金額（TWD）：", id: "actual_expenditure_actual_amount") do
             twd_amount_input(
+              live_summary: true,
               id: "actual_expenditure_actual_amount",
               name: "actual_expenditure[actual_amount]",
               form: ACTUAL_EXPENDITURE_FORM_ID,
@@ -326,15 +400,13 @@ class Views::Dashboard::Index < Views::Base
 
           expenditure_field_row(label: "列帳消費金額（TWD）：", id: "actual_expenditure_posted_amount") do
             twd_amount_input(
+              live_summary: true,
               id: "actual_expenditure_posted_amount",
               name: "actual_expenditure[posted_amount]",
               form: ACTUAL_EXPENDITURE_FORM_ID,
               placeholder: "0",
               required: true,
-              data: {
-                expenditure_mobile_sticky_summary_target: "amountInput",
-                action: "input->expenditure-live-category-summary#recalc"
-              }
+              data: { expenditure_mobile_sticky_summary_target: "amountInput" }
             )
           end
 
@@ -358,12 +430,7 @@ class Views::Dashboard::Index < Views::Base
   end
 
   def expenditure_entry_context_row
-    div(class: "flex flex-row items-start justify-between gap-3 border-b border-border/60 pb-5") do
-      div(class: "min-w-0 flex-1 pr-8 sm:pr-12") do
-        span(class: "block text-xs tabular-nums text-muted-foreground sm:text-[13px]") do
-          calendar_month_label
-        end
-      end
+    div(class: "flex flex-row items-start justify-end gap-3 border-b border-border/60 pb-5") do
       time(
         class: "shrink-0 text-xs tabular-nums text-muted-foreground sm:text-[13px]",
         data: { controller: "local-clock" }
@@ -371,7 +438,11 @@ class Views::Dashboard::Index < Views::Base
     end
   end
 
-  def calendar_month_label
-    calendar_month_label_for(@calendar_month)
+  def calendar_month_ym
+    calendar_month_ym_for(@calendar_month)
+  end
+
+  def history_ym_params
+    calendar_month_ym.present? ? { ym: calendar_month_ym } : {}
   end
 end

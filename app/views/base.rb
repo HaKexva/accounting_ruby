@@ -11,9 +11,11 @@ class Views::Base < Components::Base
   PAGE_SHELL = "flex min-h-0 w-full flex-col"
 
   PAGE_TOP_STICKY = [
-    "sticky top-0 z-10 shrink-0 space-y-6 pb-6",
-    "border-b border-border/60",
-    "-mx-1 px-1 backdrop-blur-md supports-[backdrop-filter]:bg-background/80 bg-background/95"
+    "sticky top-0 z-20 shrink-0 space-y-6 pb-6",
+    "border-b border-border/60 bg-background",
+    "-mx-1 px-1",
+    "max-lg:shadow-[0_1px_0_0_var(--border)]",
+    "lg:backdrop-blur-md lg:supports-[backdrop-filter]:bg-background/80 lg:bg-background/95"
   ].join(" ")
 
   PAGE_BODY_BELOW_STICKY = "shrink-0 flex flex-col gap-8 pt-8"
@@ -50,20 +52,34 @@ class Views::Base < Components::Base
     remain: "border-emerald-500/35 bg-emerald-500/[0.08]"
   }.freeze
 
+  # Dashboard mobile: 預算 / 支出 / 餘額 in one row (equal thirds).
+  MOBILE_CATEGORY_STATS_ROW_CLASS = [
+    "flex w-full flex-row flex-nowrap items-stretch justify-between gap-2 sm:gap-3"
+  ].join(" ")
+  MOBILE_STAT_CHIP_BASE_CLASS = [
+    "flex min-w-0 flex-1 basis-0 flex-col items-center rounded-xl border px-2 py-2.5",
+    "text-center leading-tight shadow-sm sm:px-2.5 sm:py-3"
+  ].join(" ")
+
+  # Dashboard desktop: three equal squares in the left column (no flex-1 / lg:w-full from stat chips).
+  DESKTOP_SUMMARY_GRID_CLASS = "hidden lg:grid lg:w-full lg:min-w-0 lg:grid-cols-3 lg:gap-2"
+  DESKTOP_SUMMARY_SQUARE_CLASS = [
+    "flex min-w-0 flex-col justify-between overflow-hidden rounded-xl border",
+    "aspect-square p-2.5 text-left leading-tight shadow-sm sm:p-3"
+  ].join(" ")
+
   PAGE_SPLIT_GRID_CLASS = [
     "flex min-h-0 flex-1 flex-col",
     "lg:grid lg:grid-cols-2 lg:items-start lg:gap-6 xl:gap-8 lg:pt-2"
   ].join(" ")
 
   PAGE_SPLIT_LEFT_STICKY_CLASS = [
-    PAGE_TOP_STICKY,
-    "!space-y-2 !pb-2 sm:!space-y-2 sm:!pb-3",
-    "max-h-[min(35svh,20rem)] sm:max-h-[38svh]",
+    "shrink-0 space-y-2 pb-2 sm:space-y-2 sm:pb-3",
+    "max-lg:max-h-[min(35svh,20rem)] max-lg:sm:max-h-[38svh]",
     "min-h-0 flex flex-col overflow-hidden",
-    "border-border/40 bg-background/90",
+    "max-lg:bg-background",
     "lg:sticky lg:top-4 lg:z-[1] lg:self-start lg:max-h-[calc(100dvh-6rem)] lg:overflow-y-auto lg:pr-1",
-    "lg:border-0 lg:bg-transparent lg:backdrop-blur-none lg:supports-[backdrop-filter]:bg-transparent",
-    "lg:mx-0 lg:px-0 lg:!space-y-0 lg:!pb-0"
+    "lg:mx-0 lg:px-0"
   ].join(" ")
 
   PAGE_SPLIT_RIGHT_BODY_CLASS = [
@@ -99,9 +115,9 @@ class Views::Base < Components::Base
     "bg-muted/50 p-1 shadow-inner sm:w-auto"
   ].join(" ")
   SEGMENTED_CONTROL_INDICATOR_CLASS = [
-    "pointer-events-none absolute inset-y-1 left-1 z-0 rounded-md",
-    "bg-card shadow-sm ring-1 ring-border/60",
-    "transition-[transform,width] duration-200 ease-out will-change-transform"
+    "pointer-events-none absolute top-1 bottom-1 left-0 z-0 rounded-md",
+    "bg-card shadow-sm ring-1 ring-border/60 opacity-0",
+    "transition-[left,width,translate,opacity] duration-200 ease-out"
   ].join(" ")
   SEGMENTED_CONTROL_BTN_CLASS = [
     "relative z-10 flex-1 rounded-md px-3 py-2 text-center text-sm font-medium",
@@ -129,12 +145,77 @@ class Views::Base < Components::Base
     "#{STAT_CHIP_BASE_CLASS} #{accent_classes}"
   end
 
+  def desktop_summary_square_class(accent: nil)
+    accent_key = accent&.to_sym
+    accent_classes = STAT_CHIP_ACCENTS.fetch(accent_key, "border-border/50 bg-muted/30")
+    "#{DESKTOP_SUMMARY_SQUARE_CLASS} #{accent_classes}"
+  end
+
+  def mobile_stat_chip_class(accent: nil)
+    accent_key = accent&.to_sym
+    accent_classes = STAT_CHIP_ACCENTS.fetch(accent_key, "border-border/50 bg-muted/30")
+    "#{MOBILE_STAT_CHIP_BASE_CLASS} #{accent_classes}"
+  end
+
+  def calendar_month_option_label(calendar_month, planning_calendar_month: nil)
+    label = calendar_month_label_for(calendar_month)
+    if planning_calendar_month.present? && calendar_month.id == planning_calendar_month.id
+      "#{label}（下月）"
+    else
+      label
+    end
+  end
+
   def calendar_month_label_for(calendar_month)
     if calendar_month
       "#{calendar_month.year} 年 #{calendar_month.month} 月"
     else
       t = Time.zone.today
       "#{t.year} 年 #{t.month} 月"
+    end
+  end
+
+  def calendar_month_ym_for(calendar_month)
+    return nil unless calendar_month
+
+    Kernel.format("%04d-%02d", calendar_month.year, calendar_month.month)
+  end
+
+  def calendar_month_selector(month_choices:, calendar_month:, url:, select_id: "calendar_month",
+                            include_all: false, compact: false, planning_calendar_month: nil)
+    wrap_class = if compact
+      "max-w-[9rem] sm:max-w-[10rem] [&_select]:h-8 [&_select]:py-0.5 [&_select]:text-xs sm:[&_select]:text-sm"
+    else
+      "max-w-[9.5rem] sm:max-w-[10.5rem] [&_select]:h-8 [&_select]:py-0.5 [&_select]:text-xs sm:[&_select]:text-sm"
+    end
+
+    div(class: wrap_class) do
+      NativeSelect(
+        id: select_id,
+        aria: { label: include_all ? "篩選月份" : "選擇月份" },
+        data: {
+          controller: "calendar-month-select",
+          calendar_month_select_url_value: url,
+          action: [
+            "change->calendar-month-select#navigate",
+            "change->ruby-ui--form-field#onChange",
+            "invalid->ruby-ui--form-field#onInvalid"
+          ].join(" ")
+        }
+      ) do
+        if include_all
+          NativeSelectOption(value: "", selected: calendar_month.nil?) { plain "全部月份" }
+        end
+        month_choices.each do |cm|
+          ym = calendar_month_ym_for(cm)
+          NativeSelectOption(
+            value: ym,
+            selected: calendar_month.present? && cm.id == calendar_month.id
+          ) do
+            plain calendar_month_option_label(cm, planning_calendar_month: planning_calendar_month)
+          end
+        end
+      end
     end
   end
 

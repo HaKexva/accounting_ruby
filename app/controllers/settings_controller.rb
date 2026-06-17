@@ -64,7 +64,6 @@ class SettingsController < ApplicationController
         from: previous_name,
         to: item.name
       )
-      notice = "已更新「#{item.name}」。"
       notice = "#{notice} 已同步本月 #{synced} 筆支出與預算資料。" if synced.positive?
       redirect_to settings_path(kind: item.kind), notice: notice
     else

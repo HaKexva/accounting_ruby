@@ -11,9 +11,17 @@ module Authentication
   private
 
   def current_user
-    return @current_user if defined?(@current_user)
+    session_user_id = session[:user_id].presence&.to_i
+    if session_user_id.blank?
+      @current_user = nil
+      return nil
+    end
 
-    @current_user = User.find_by(id: session[:user_id]) if session[:user_id].present?
+    if defined?(@current_user) && @current_user&.id == session_user_id
+      return @current_user
+    end
+
+    @current_user = User.find_by(id: session_user_id)
   end
 
   def signed_in?
@@ -42,9 +50,16 @@ module Authentication
     request.present? && LocalHostAccess.localhost_host?(request.host)
   end
 
-  # Development or browser on localhost: no login screen, automatic trial user.
+  # No Google credentials yet (e.g. Railway before env vars are set).
+  def oauth_login_required?
+    GoogleOauth.configured?
+  end
+
+  # Development, localhost, or deploy without OAuth: automatic trial user.
   def skip_login_page?
-    !Rails.env.test? && (Rails.env.local? || localhost_request?)
+    return false if Rails.env.test?
+
+    !oauth_login_required? || Rails.env.local? || localhost_request?
   end
 
   def allow_anonymous_trial?

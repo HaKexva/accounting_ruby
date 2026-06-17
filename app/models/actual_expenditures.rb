@@ -18,6 +18,28 @@ class ActualExpenditure < ApplicationRecord
   validate :credit_card_payment_method_required_for_credit_card
   validate :payment_platform_required_for_multi_pay
 
+  scope :for_user, ->(user) { where(user: user) }
+  scope :in_calendar_month, ->(calendar_month) { where(calendar_month: calendar_month) }
+  scope :category_is, ->(category) { where(category: category) }
+  scope :payment_method_is, ->(payment_method) { where(payment_method: payment_method) }
+  scope :payment_platform_is, ->(payment_platform) { where(payment_platform: payment_platform) }
+  scope :transaction_date_from, ->(date) { where("transaction_date >= ?", date) }
+  scope :transaction_date_to, ->(date) { where("transaction_date <= ?", date) }
+  scope :posted_amount_gte, ->(amount) { where("posted_amount >= ?", amount) }
+  scope :posted_amount_lte, ->(amount) { where("posted_amount <= ?", amount) }
+  scope :search_text, lambda { |q|
+    t = q.to_s.strip
+    next all if t.blank?
+
+    pattern = "%#{sanitize_sql_like(t)}%"
+    adapter = connection.adapter_name.to_s.downcase
+    like_op = adapter.include?("postgres") ? "ILIKE" : "LIKE"
+    where(
+      "transaction_item #{like_op} :pattern OR note #{like_op} :pattern OR category #{like_op} :pattern",
+      pattern: pattern
+    )
+  }
+
   private
 
   def nullify_blank_optional_strings
