@@ -3,6 +3,14 @@
 class DashboardController < ApplicationController
   include CalendarMonthResolution
 
+  HISTORY_SORTS = {
+    "date_desc" => { transaction_date: :desc, id: :desc },
+    "date_asc" => { transaction_date: :asc, id: :asc },
+    "amount_desc" => { posted_amount: :desc, id: :desc },
+    "amount_asc" => { posted_amount: :asc, id: :asc }
+  }.freeze
+  HISTORY_DEFAULT_SORT = "date_desc"
+
   def index
     user = trial_account_owner
     calendar_month = calendar_month_from_params
@@ -78,7 +86,7 @@ class DashboardController < ApplicationController
         scope = scope.transaction_date_to(date_to) if date_to
         scope = scope.posted_amount_gte(min_amount) if min_amount
         scope = scope.posted_amount_lte(max_amount) if max_amount
-        scope.order(transaction_date: :desc, id: :desc)
+        scope.order(**history_sort_order(filters[:sort]))
       else
         ActualExpenditure.none
       end
@@ -96,7 +104,13 @@ class DashboardController < ApplicationController
 
   def history_filter_params
     params.permit(:q, :category, :payment_method, :payment_platform, :date_from, :date_to,
-                  :min_posted_amount, :max_posted_amount)
+                  :min_posted_amount, :max_posted_amount, :sort)
+  end
+
+  def history_sort_order(sort)
+    key = sort.to_s
+    key = HISTORY_DEFAULT_SORT unless HISTORY_SORTS.key?(key)
+    HISTORY_SORTS.fetch(key)
   end
 
   def parse_iso_date(raw)

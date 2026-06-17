@@ -203,6 +203,58 @@ class DashboardControllerTest < ActionDispatch::IntegrationTest
     end
   end
 
+  test "history supports amount sort" do
+    travel_to Time.zone.local(2026, 5, 15, 12, 0, 0) do
+      cm = CalendarMonth.for_year_month!(2026, 5)
+      ActualExpenditure.create!(
+        user: users(:one),
+        calendar_month: cm,
+        transaction_date: Date.new(2026, 5, 1),
+        transaction_item: "SORT_LOW",
+        category: ExpenditureTaxonomy::DEFAULT_CATEGORIES.first,
+        payment_method: "現金",
+        actual_amount: 10,
+        posted_amount: 10
+      )
+      ActualExpenditure.create!(
+        user: users(:one),
+        calendar_month: cm,
+        transaction_date: Date.new(2026, 5, 2),
+        transaction_item: "SORT_HIGH",
+        category: ExpenditureTaxonomy::DEFAULT_CATEGORIES.first,
+        payment_method: "現金",
+        actual_amount: 500,
+        posted_amount: 500
+      )
+
+      get expense_history_path(sort: "amount_desc")
+      assert_response :success
+      assert_operator response.body.index("SORT_HIGH"), :<, response.body.index("SORT_LOW")
+    end
+  end
+
+  test "history shows payment summary chips" do
+    travel_to Time.zone.local(2026, 5, 15, 12, 0, 0) do
+      cm = CalendarMonth.for_year_month!(2026, 5)
+      ActualExpenditure.create!(
+        user: users(:one),
+        calendar_month: cm,
+        transaction_date: Date.new(2026, 5, 3),
+        transaction_item: "PAYMENT_CHIP_ROW",
+        category: ExpenditureTaxonomy::DEFAULT_CATEGORIES.first,
+        payment_method: "多元支付",
+        payment_platform: ExpenditureTaxonomy::DEFAULT_PAYMENT_PLATFORMS.first,
+        actual_amount: 80,
+        posted_amount: 80
+      )
+
+      get expense_history_path
+      assert_response :success
+      assert_includes response.body, "多元支付 · #{ExpenditureTaxonomy::DEFAULT_PAYMENT_PLATFORMS.first}"
+      assert_includes response.body, 'name="sort"'
+    end
+  end
+
   test "history includes edit and delete controls" do
     get expense_history_path
     assert_response :success
