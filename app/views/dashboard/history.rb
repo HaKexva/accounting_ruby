@@ -5,11 +5,12 @@ class Views::Dashboard::History < Views::Base
 
   EDIT_FORM_ID = "history_edit_actual_expenditure_form"
 
-  def initialize(actual_expenditures:, month_filter:, month_choices:, taxonomy:)
+  def initialize(actual_expenditures:, month_filter:, month_choices:, taxonomy:, filters: {})
     @actual_expenditures = actual_expenditures
     @month_filter = month_filter
     @month_choices = month_choices
     @taxonomy = taxonomy
+    @filters = filters
   end
 
   def view_template
@@ -36,16 +37,19 @@ class Views::Dashboard::History < Views::Base
   def history_records_section
     section(class: "#{CARD_SECTION_CLASS} overflow-hidden", aria: { label: "實際支出列表" }) do
       div(class: MONTH_SUMMARY_HEADER_CLASS) do
-        div(class: "flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between") do
-          h2(class: MONTH_SUMMARY_TITLE_CLASS) { history_list_title }
-          calendar_month_selector(
-            month_choices: @month_choices,
-            calendar_month: @month_filter,
-            url: expense_history_path,
-            select_id: "history_calendar_month",
-            include_all: true,
-            compact: true
-          )
+        div(class: "flex flex-col gap-3") do
+          div(class: "flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between") do
+            h2(class: MONTH_SUMMARY_TITLE_CLASS) { history_list_title }
+            calendar_month_selector(
+              month_choices: @month_choices,
+              calendar_month: @month_filter,
+              url: expense_history_path,
+              select_id: "history_calendar_month",
+              include_all: true,
+              compact: true
+            )
+          end
+          history_filter_form
         end
       end
 
@@ -81,6 +85,99 @@ class Views::Dashboard::History < Views::Base
         end
       end
     end
+  end
+
+  def history_filter_form
+    form(
+      action: expense_history_path,
+      method: :get,
+      class: "grid grid-cols-1 gap-2 sm:grid-cols-2"
+    ) do
+      ym = calendar_month_ym_for(@month_filter)
+      input(type: :hidden, name: :ym, value: ym) if ym.present?
+
+      Input(
+        name: "q",
+        type: :search,
+        value: @filters[:q].to_s,
+        placeholder: "搜尋（項目／備註／類別）…",
+        class: "sm:col-span-2"
+      )
+
+      NativeSelect(
+        name: "category",
+        aria: { label: "消費類別" }
+      ) do
+        NativeSelectOption(value: "", selected: @filters[:category].blank?) { plain "全部類別" }
+        @taxonomy.categories.each do |c|
+          NativeSelectOption(value: c, selected: @filters[:category].to_s == c) { plain c }
+        end
+      end
+
+      NativeSelect(
+        name: "payment_method",
+        aria: { label: "支付方式" }
+      ) do
+        NativeSelectOption(value: "", selected: @filters[:payment_method].blank?) { plain "全部支付方式" }
+        @taxonomy.payment_methods.each do |m|
+          NativeSelectOption(value: m, selected: @filters[:payment_method].to_s == m) { plain m }
+        end
+      end
+
+      NativeSelect(
+        name: "payment_platform",
+        aria: { label: "支付平台" }
+      ) do
+        NativeSelectOption(value: "", selected: @filters[:payment_platform].blank?) { plain "全部支付平台" }
+        @taxonomy.payment_platforms.each do |p|
+          NativeSelectOption(value: p, selected: @filters[:payment_platform].to_s == p) { plain p }
+        end
+      end
+
+      div(class: "grid grid-cols-2 gap-2") do
+        Input(
+          name: "date_from",
+          type: :date,
+          value: @filters[:date_from].to_s,
+          aria: { label: "起始日期" }
+        )
+        Input(
+          name: "date_to",
+          type: :date,
+          value: @filters[:date_to].to_s,
+          aria: { label: "結束日期" }
+        )
+      end
+
+      div(class: "grid grid-cols-2 gap-2") do
+        Input(
+          name: "min_posted_amount",
+          type: :text,
+          inputmode: "numeric",
+          value: @filters[:min_posted_amount].to_s,
+          placeholder: "最小列帳金額",
+          aria: { label: "最小列帳金額" }
+        )
+        Input(
+          name: "max_posted_amount",
+          type: :text,
+          inputmode: "numeric",
+          value: @filters[:max_posted_amount].to_s,
+          placeholder: "最大列帳金額",
+          aria: { label: "最大列帳金額" }
+        )
+      end
+
+      div(class: "flex gap-2 sm:col-span-2") do
+        Button(type: :submit, variant: :primary, size: :sm, class: "flex-1") { "篩選" }
+        Link(href: clear_filter_href, variant: :outline, size: :sm, class: "flex-1") { "清除" }
+      end
+    end
+  end
+
+  def clear_filter_href
+    ym = calendar_month_ym_for(@month_filter)
+    ym.present? ? expense_history_path(ym: ym) : expense_history_path
   end
 
   def history_list_item(expenditure)
