@@ -11,9 +11,11 @@ class Views::Base < Components::Base
   PAGE_SHELL = "flex min-h-0 w-full flex-col"
 
   PAGE_TOP_STICKY = [
-    "sticky top-0 z-10 shrink-0 space-y-6 pb-6",
-    "border-b border-border/60",
-    "-mx-1 px-1 backdrop-blur-md supports-[backdrop-filter]:bg-background/80 bg-background/95"
+    "sticky top-0 z-20 shrink-0 space-y-6 pb-6",
+    "border-b border-border/60 bg-background",
+    "-mx-1 px-1",
+    "max-lg:shadow-[0_1px_0_0_var(--border)]",
+    "lg:backdrop-blur-md lg:supports-[backdrop-filter]:bg-background/80 lg:bg-background/95"
   ].join(" ")
 
   PAGE_BODY_BELOW_STICKY = "shrink-0 flex flex-col gap-8 pt-8"
@@ -72,14 +74,12 @@ class Views::Base < Components::Base
   ].join(" ")
 
   PAGE_SPLIT_LEFT_STICKY_CLASS = [
-    PAGE_TOP_STICKY,
-    "!space-y-2 !pb-2 sm:!space-y-2 sm:!pb-3",
-    "max-h-[min(35svh,20rem)] sm:max-h-[38svh]",
+    "shrink-0 space-y-2 pb-2 sm:space-y-2 sm:pb-3",
+    "max-lg:max-h-[min(35svh,20rem)] max-lg:sm:max-h-[38svh]",
     "min-h-0 flex flex-col overflow-hidden",
-    "border-border/40 bg-background/90",
+    "max-lg:bg-background",
     "lg:sticky lg:top-4 lg:z-[1] lg:self-start lg:max-h-[calc(100dvh-6rem)] lg:overflow-y-auto lg:pr-1",
-    "lg:border-0 lg:bg-transparent lg:backdrop-blur-none lg:supports-[backdrop-filter]:bg-transparent",
-    "lg:mx-0 lg:px-0 lg:!space-y-0 lg:!pb-0"
+    "lg:mx-0 lg:px-0"
   ].join(" ")
 
   PAGE_SPLIT_RIGHT_BODY_CLASS = [
