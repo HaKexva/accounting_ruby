@@ -23,7 +23,7 @@ gem "jbuilder"
 # gem "bcrypt", "~> 3.1.7"
 
 # Security: explicit minimum for GHSA-c4rq-3m3g-8wgx, GHSA-v2fc-qm4h-8hqv (bundler-audit / CI)
-gem "nokogiri", ">= 1.19.3"
+gem "nokogiri", ">= 1.19.4"
 
 # Windows does not include zoneinfo files, so bundle the tzinfo-data gem
 gem "tzinfo-data", platforms: %i[ windows jruby ]
