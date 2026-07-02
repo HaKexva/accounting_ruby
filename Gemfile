@@ -22,7 +22,7 @@ gem "jbuilder"
 # Use Active Model has_secure_password [https://guides.rubyonrails.org/active_model_basics.html#securepassword]
 # gem "bcrypt", "~> 3.1.7"
 
-# Security: explicit minimum for GHSA-c4rq-3m3g-8wgx, GHSA-v2fc-qm4h-8hqv (bundler-audit / CI)
+# Security: explicit minimum for bundler-audit / CI (use-after-free advisories on 1.19.3)
 gem "nokogiri", ">= 1.19.4"
 
 # Windows does not include zoneinfo files, so bundle the tzinfo-data gem
