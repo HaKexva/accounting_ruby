@@ -2,7 +2,7 @@
 buildCommand = "SECRET_KEY_BASE_DUMMY=1 bundle exec rails assets:precompile"
 
 [deploy]
-releaseCommand = "bin/rails db:prepare"
+preDeployCommand = "bin/rails db:prepare"
 healthcheckPath = "/up"
 healthcheckTimeout = 100
 restartPolicyType = "on_failure"

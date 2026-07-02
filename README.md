@@ -103,7 +103,7 @@ Production boots via **[`bin/start-web`](bin/start-web)** (Thruster → Puma), w
 2. Runs **`assets:precompile`** if `public/assets` is missing
 3. Sets **`HTTP_PORT`** from Railway’s **`PORT`**
 
-[`railway.toml`](railway.toml) also runs **`assets:precompile`** at build time and **`db:prepare`** as a release command.
+[`railway.toml`](railway.toml) also runs **`assets:precompile`** at build time and **`db:prepare`** as a pre-deploy command.
 
 **Required variables**
 
@@ -223,7 +223,7 @@ bin/dev
 2. 若缺少 `public/assets` 則執行 **`assets:precompile`**
 3. 以 Railway 的 **`PORT`** 設定 **`HTTP_PORT`**
 
-[`railway.toml`](railway.toml) 在建置階段執行 **`assets:precompile`**，並以 **`db:prepare`** 作為 release 指令。
+[`railway.toml`](railway.toml) 在建置階段執行 **`assets:precompile`**，並以 **`db:prepare`** 作為 pre-deploy 指令。
 
 **建議環境變數**
 
