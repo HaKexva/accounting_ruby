@@ -81,7 +81,7 @@ gem "tailwindcss-rails", "~> 4.4"
 
 gem "tailwind_merge", "~> 1.4"
 
-gem "rouge", "~> 4.7"
+gem "rouge", "~> 5.0"
 
 gem "omniauth-google-oauth2", "~> 1.2"
 gem "omniauth-rails_csrf_protection", "~> 1.0"
