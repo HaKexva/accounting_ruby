@@ -43,13 +43,13 @@ class Views::Settings::Index < Views::Base
         kind: "payment_method",
         target: "paymentMethodPanel",
         items: @items_by_kind.fetch("payment_method", []),
-        hint: "用於實際支出的支付方式選單。"
+        hint: "勾選「需要支付平台」後，登錄支出時會顯示支付平台選單；可自由新增支付方式並指定是否需選平台。"
       )
       taxonomy_panel(
         kind: "payment_platform",
         target: "paymentPlatformPanel",
         items: @items_by_kind.fetch("payment_platform", []),
-        hint: "選擇「多元支付」時顯示的平台選單。"
+        hint: "支付平台選項；由已勾選「需要支付平台」的支付方式觸發顯示。"
       )
     end
   end
@@ -102,7 +102,7 @@ class Views::Settings::Index < Views::Base
       data: {
         kind_value: kind,
         settings_taxonomy_kind_target: "kindButton",
-        action: "click->settings-taxonomy-kind#pickKind"
+        action: "click->settings-taxonomy-kind#sync"
       },
       aria: { pressed: active }
     ) { ExpenditureTaxonomyItem::KIND_LABELS[kind] }
@@ -129,7 +129,7 @@ class Views::Settings::Index < Views::Base
               p(class: "mt-1 text-xs text-muted-foreground") { "請在下方新增第一筆。" }
             end
           else
-            items.each { |item| taxonomy_item_row(item) }
+            items.each { |item| taxonomy_item_row(item, kind: kind) }
           end
         end
 
@@ -146,7 +146,7 @@ class Views::Settings::Index < Views::Base
     "sm:h-9 sm:px-4 sm:py-2 sm:text-sm"
   ].join(" ").freeze
 
-  def taxonomy_item_row(item)
+  def taxonomy_item_row(item, kind:)
     div(
       class: [
         "flex items-center gap-2 px-4 py-3 transition-colors sm:gap-3 sm:px-5",
@@ -154,7 +154,7 @@ class Views::Settings::Index < Views::Base
       ].join(" ")
     ) do
       form(
-        class: "flex min-w-0 flex-1 items-center gap-2 sm:gap-3",
+        class: "flex min-w-0 flex-1 flex-wrap items-center gap-2 sm:gap-3",
         action: settings_taxonomy_item_path(item),
         method: "post",
         data: {
@@ -166,7 +166,7 @@ class Views::Settings::Index < Views::Base
         input(type: "hidden", name: "_method", value: "patch")
         input(type: "hidden", name: "expenditure_taxonomy_item[kind]", value: item.kind)
 
-        div(class: "min-w-0 flex-1") do
+        div(class: "min-w-0 flex-1 basis-40") do
           Input(
             id: "taxonomy_item_name_#{item.id}",
             name: "expenditure_taxonomy_item[name]",
@@ -177,6 +177,12 @@ class Views::Settings::Index < Views::Base
             data: { settings_taxonomy_row_target: "nameInput" }
           )
         end
+
+        payment_method_platform_checkbox(
+          item_id: item.id,
+          checked: item.requires_payment_platform?,
+          visible: kind == "payment_method"
+        )
 
         Button(
           type: :submit,
@@ -205,7 +211,7 @@ class Views::Settings::Index < Views::Base
 
   def taxonomy_add_form(kind:)
     form(
-      class: "flex flex-col gap-3 sm:flex-row sm:items-end",
+      class: "flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end",
       action: settings_taxonomy_items_path,
       method: "post",
       data: {
@@ -217,7 +223,7 @@ class Views::Settings::Index < Views::Base
       input(type: "hidden", name: "authenticity_token", value: view_context.form_authenticity_token)
       input(type: "hidden", name: "expenditure_taxonomy_item[kind]", value: kind)
 
-      div(class: "min-w-0 flex-1 space-y-1.5") do
+      div(class: "min-w-0 flex-1 basis-40 space-y-1.5") do
         label(
           for: "taxonomy_new_name_#{kind}",
           class: "text-xs font-medium text-muted-foreground"
@@ -232,6 +238,12 @@ class Views::Settings::Index < Views::Base
         )
       end
 
+      payment_method_platform_checkbox(
+        item_id: "new_#{kind}",
+        checked: false,
+        visible: kind == "payment_method"
+      )
+
       Button(
         type: :submit,
         variant: :primary,
@@ -241,6 +253,34 @@ class Views::Settings::Index < Views::Base
         aria: { disabled: true },
         data: { settings_taxonomy_row_target: "submitButton" }
       ) { "新增" }
+    end
+  end
+
+  def payment_method_platform_checkbox(item_id:, checked:, visible:)
+    return unless visible
+
+    label(
+      for: "taxonomy_item_platform_#{item_id}",
+      class: "flex shrink-0 items-center gap-2 text-xs text-muted-foreground whitespace-nowrap sm:pb-2"
+    ) do
+      input(
+        type: "hidden",
+        name: "expenditure_taxonomy_item[requires_payment_platform]",
+        value: "0"
+      )
+      input(
+        type: "checkbox",
+        id: "taxonomy_item_platform_#{item_id}",
+        name: "expenditure_taxonomy_item[requires_payment_platform]",
+        value: "1",
+        checked: checked,
+        class: [
+          "h-4 w-4 shrink-0 rounded-sm border-input accent-primary",
+          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+        ].join(" "),
+        data: { settings_taxonomy_row_target: "platformCheckbox" }
+      )
+      plain "需要支付平台"
     end
   end
 end

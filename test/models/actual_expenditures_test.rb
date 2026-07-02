@@ -37,6 +37,23 @@ class ActualExpenditureTest < ActiveSupport::TestCase
     assert record.valid?
   end
 
+  test "payment_summary joins method and platform for renamed multi-pay method" do
+    user = users(:one)
+    ExpenditureTaxonomyItem.where(user: user).delete_all
+    ExpenditureTaxonomy.ensure_seeded!(user)
+    item = user.expenditure_taxonomy_items.for_kind("payment_method").find_by!(name: "多元支付")
+    item.update!(name: "行動支付")
+
+    record = actual_expenditures(:one)
+    record.assign_attributes(
+      payment_method: "行動支付",
+      payment_platform: "LINE Pay",
+      credit_card_payment_method: nil,
+      payment_timing: nil
+    )
+    assert_equal "行動支付 · LINE Pay", record.payment_summary
+  end
+
   test "payment_summary joins method and platform for multi-pay" do
     record = actual_expenditures(:one)
     record.assign_attributes(

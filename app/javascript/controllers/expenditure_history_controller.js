@@ -332,7 +332,7 @@ export default class extends Controller {
       const timing = (record.payment_timing ?? "").trim();
       if (card) parts.push(card);
       if (timing) parts.push(timing);
-    } else if (methodName === "多元支付") {
+    } else if (this.#platformMethods().includes(methodName)) {
       const platform = (record.payment_platform ?? "").trim();
       if (platform) parts.push(platform);
     }
@@ -372,6 +372,17 @@ export default class extends Controller {
       .replace(/</g, "&lt;")
       .replace(/>/g, "&gt;")
       .replace(/"/g, "&quot;");
+  }
+
+  #platformMethods() {
+    const formController = this.application.getControllerForElementAndIdentifier(
+      this.element,
+      "expenditure-form"
+    );
+    if (formController?.platformMethodsValue?.length) {
+      return formController.platformMethodsValue;
+    }
+    return ["多元支付"];
   }
 
   #setStatus(text) {

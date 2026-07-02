@@ -57,13 +57,14 @@ class SettingsController < ApplicationController
 
     item = user.expenditure_taxonomy_items.find(params[:id])
     previous_name = item.name
-    if item.update(taxonomy_item_attributes.except(:kind))
+    if item.update(taxonomy_item_attributes(kind: item.kind).except(:kind))
       synced = ExpenditureTaxonomyRenamePropagator.call(
         user: user,
         kind: item.kind,
         from: previous_name,
         to: item.name
       )
+      notice = "已更新「#{item.name}」。"
       notice = "#{notice} 已同步本月 #{synced} 筆支出與預算資料。" if synced.positive?
       redirect_to settings_path(kind: item.kind), notice: notice
     else
@@ -114,12 +115,17 @@ class SettingsController < ApplicationController
     ExpenditureTaxonomyItem::KINDS.include?(kind) ? kind : "category"
   end
 
-  def taxonomy_item_attributes
-    raw = params.require(:expenditure_taxonomy_item).permit(:kind, :name)
-    {
-      kind: valid_kind(raw[:kind]),
+  def taxonomy_item_attributes(kind: nil)
+    raw = params.require(:expenditure_taxonomy_item).permit(:kind, :name, :requires_payment_platform)
+    resolved_kind = kind || valid_kind(raw[:kind])
+    attrs = {
+      kind: resolved_kind,
       name: raw[:name].to_s.strip
     }
+    if resolved_kind == "payment_method"
+      attrs[:requires_payment_platform] = ActiveModel::Type::Boolean.new.cast(raw[:requires_payment_platform])
+    end
+    attrs
   end
 
   def next_position_for(user, kind)

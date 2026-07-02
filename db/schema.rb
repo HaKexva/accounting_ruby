@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_05_17_140000) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_01_120000) do
   create_table "actual_expenditures", force: :cascade do |t|
     t.decimal "actual_amount", null: false
     t.integer "calendar_month_id", null: false
@@ -57,6 +57,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_17_140000) do
     t.string "kind", null: false
     t.string "name", null: false
     t.integer "position", default: 0, null: false
+    t.boolean "requires_payment_platform", default: false, null: false
     t.datetime "updated_at", null: false
     t.integer "user_id", null: false
     t.index ["user_id", "kind", "name"], name: "index_expenditure_taxonomy_items_on_user_id_and_kind_and_name", unique: true

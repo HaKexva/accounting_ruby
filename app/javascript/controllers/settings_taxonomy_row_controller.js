@@ -5,7 +5,7 @@ import { Controller } from "@hotwired/stimulus";
  * (edit rows) or is non-empty (add row).
  */
 export default class extends Controller {
-  static targets = ["nameInput", "submitButton"];
+  static targets = ["nameInput", "submitButton", "platformCheckbox"];
 
   static values = {
     mode: { type: String, default: "edit" }
@@ -13,15 +13,23 @@ export default class extends Controller {
 
   connect() {
     this.originalValue = this.nameInputTarget.value.trim();
+    this.originalPlatformRequired = this.hasPlatformCheckboxTarget
+      ? this.platformCheckboxTarget.checked
+      : null;
     this.sync();
   }
 
   sync() {
     const current = this.nameInputTarget.value.trim();
-    const dirty =
+    let dirty =
       this.modeValue === "add"
         ? current.length > 0
         : current !== this.originalValue;
+
+    if (this.hasPlatformCheckboxTarget && this.modeValue !== "add") {
+      dirty =
+        dirty || this.platformCheckboxTarget.checked !== this.originalPlatformRequired;
+    }
 
     this.submitButtonTarget.disabled = !dirty;
     this.submitButtonTarget.classList.toggle("opacity-40", !dirty);

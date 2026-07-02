@@ -49,7 +49,7 @@ class ActualExpenditure < ApplicationRecord
     if method_name.include?("信用卡")
       parts << credit_card_payment_method if credit_card_payment_method.present?
       parts << payment_timing if payment_timing.present?
-    elsif method_name == "多元支付"
+    elsif payment_method_requires_platform?
       parts << payment_platform if payment_platform.present?
     end
     parts.join(" · ")
@@ -70,7 +70,7 @@ class ActualExpenditure < ApplicationRecord
       self.payment_timing = nil
     end
 
-    return if payment_method.to_s == "多元支付"
+    return if payment_method_requires_platform?
 
     self.payment_platform = nil
   end
@@ -88,8 +88,26 @@ class ActualExpenditure < ApplicationRecord
   end
 
   def payment_platform_required_for_multi_pay
-    return unless payment_method.to_s == "多元支付"
+    return unless payment_method_requires_platform?
 
     errors.add(:payment_platform, :blank) if payment_platform.blank?
+  end
+
+  def payment_method_requires_platform?
+    method_name = payment_method.to_s.strip
+    return false if method_name.blank?
+
+    if ExpenditureTaxonomy.persisted_taxonomy_available? && user
+      methods = user.expenditure_taxonomy_items.for_kind("payment_method")
+      if methods.exists?
+        return methods.where(requires_payment_platform: true)
+                      .where("LOWER(name) = LOWER(?)", method_name)
+                      .exists?
+      end
+    end
+
+    ExpenditureTaxonomy.default_payment_methods_requiring_platform.any? do |name|
+      name.casecmp?(method_name)
+    end
   end
 end

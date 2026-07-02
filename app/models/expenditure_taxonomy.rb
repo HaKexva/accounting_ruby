@@ -68,6 +68,17 @@ class ExpenditureTaxonomy
       names_for("payment_platform")
     end
 
+    def payment_methods_requiring_platform
+      return ExpenditureTaxonomy.default_payment_methods_requiring_platform unless persisted_taxonomy_available?
+      return ExpenditureTaxonomy.default_payment_methods_requiring_platform unless @user
+
+      methods = ExpenditureTaxonomyItem.for_kind("payment_method").where(user: @user)
+      return ExpenditureTaxonomy.default_payment_methods_requiring_platform unless methods.exists?
+
+      names = methods.where(requires_payment_platform: true).pluck(:name)
+      names.presence || ExpenditureTaxonomy.default_payment_methods_requiring_platform
+    end
+
     def names_for(kind)
       defaults = DEFAULTS_BY_KIND.fetch(kind, [])
       return defaults unless ExpenditureTaxonomy.persisted_taxonomy_available?
@@ -101,6 +112,10 @@ class ExpenditureTaxonomy
     @persisted_taxonomy_available = false
   end
 
+  def self.default_payment_methods_requiring_platform
+    [ "多元支付" ].freeze
+  end
+
   def self.ensure_seeded!(user)
     return unless user
     return unless persisted_taxonomy_available?
@@ -113,7 +128,8 @@ class ExpenditureTaxonomy
             user: user,
             kind: kind,
             name: name,
-            position: index
+            position: index,
+            requires_payment_platform: kind == "payment_method" && name == "多元支付"
           )
         end
       end
