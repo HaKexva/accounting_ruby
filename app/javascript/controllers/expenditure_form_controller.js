@@ -10,6 +10,10 @@ export default class extends Controller {
     "paymentPlatform"
   ];
 
+  static values = {
+    platformMethods: { type: Array, default: ["多元支付"] }
+  };
+
   connect() {
     if (this.hasPaymentMethodTarget) this.sync();
   }
@@ -52,7 +56,7 @@ export default class extends Controller {
       }
     }
 
-    const showPlatform = value === "多元支付";
+    const showPlatform = this.platformMethodsValue.includes(value);
     if (this.hasPaymentPlatformSectionTarget) {
       this.paymentPlatformSectionTarget.classList.toggle("hidden", !showPlatform);
     }

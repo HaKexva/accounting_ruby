@@ -17,7 +17,8 @@ class Views::Dashboard::History < Views::Base
     div(
       class: "#{PAGE_SHELL} #{PAGE_NARROW_CLASS}",
       data: {
-        controller: "expenditure-history expenditure-form"
+        controller: "expenditure-history expenditure-form",
+        expenditure_form_platform_methods_value: @taxonomy.payment_methods_requiring_platform.to_json
       }
     ) do
       history_header

@@ -26,13 +26,7 @@ export default class extends Controller {
   }
 
   pickKind(event) {
-    const kind = event.currentTarget.dataset.kindValue;
-    if (!kind) return;
-
-    if (this.hasKindSelectTarget) {
-      this.kindSelectTarget.value = kind;
-    }
-    this.sync();
+    this.sync(event);
   }
 
   sync(event) {
@@ -42,9 +36,15 @@ export default class extends Controller {
       this.kindSelectTarget.value = kind;
     }
 
-    this.categoryPanelTarget.classList.toggle("hidden", kind !== "category");
-    this.paymentMethodPanelTarget.classList.toggle("hidden", kind !== "payment_method");
-    this.paymentPlatformPanelTarget.classList.toggle("hidden", kind !== "payment_platform");
+    if (this.hasCategoryPanelTarget) {
+      this.categoryPanelTarget.classList.toggle("hidden", kind !== "category");
+    }
+    if (this.hasPaymentMethodPanelTarget) {
+      this.paymentMethodPanelTarget.classList.toggle("hidden", kind !== "payment_method");
+    }
+    if (this.hasPaymentPlatformPanelTarget) {
+      this.paymentPlatformPanelTarget.classList.toggle("hidden", kind !== "payment_platform");
+    }
 
     this.kindButtonTargets.forEach((button) => {
       const active = button.dataset.kindValue === kind;

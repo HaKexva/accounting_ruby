@@ -20,10 +20,15 @@ class ExpenditureTaxonomyItem < ApplicationRecord
   scope :for_kind, ->(kind) { where(kind: kind).ordered }
 
   before_validation :normalize_name
+  before_validation :clear_requires_payment_platform_unless_payment_method
 
   private
 
   def normalize_name
     self.name = name.to_s.strip if name
+  end
+
+  def clear_requires_payment_platform_unless_payment_method
+    self.requires_payment_platform = false unless kind == "payment_method"
   end
 end

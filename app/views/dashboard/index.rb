@@ -45,6 +45,7 @@ class Views::Dashboard::Index < Views::Base
         expenditure_live_category_summary_budgets_value: category_budgets_json,
         expenditure_live_category_summary_spent_value: chart_categories_json,
         actual_expenditure_form_month_total_base_value: @month_total.to_f,
+        expenditure_form_platform_methods_value: @taxonomy.payment_methods_requiring_platform.to_json,
         action: [
           "actual-expenditure-form:success->expenditure-month-chart#applyTally",
           "actual-expenditure-form:success->expenditure-live-category-summary#applySpent",
