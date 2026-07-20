@@ -2,7 +2,7 @@
 <html lang="zh-Hant">
   <head>
     <title><%= content_for(:title) || "記帳" %></title>
-    <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+    <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,interactive-widget=resizes-content">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="application-name" content="記帳">
     <meta name="mobile-web-app-capable" content="yes">
@@ -24,7 +24,7 @@
     <%= javascript_importmap_tags %>
   </head>
 
-  <body class="overflow-x-hidden">
+  <body class="overflow-x-hidden overflow-y-hidden">
     <%= render RubyUI::Layout.new do %>
       <%= yield %>
     <% end %>

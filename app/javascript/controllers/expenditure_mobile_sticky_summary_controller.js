@@ -4,6 +4,10 @@ import { Controller } from "@hotwired/stimulus";
  * Mobile (<lg): when 金額 inputs are focused and the summary panel is scrolled
  * under the app header, pin the panel under the header (like accounting/expense.md).
  * Uses visualViewport so the bar stays usable when the software keyboard opens.
+ *
+ * Scroll corrections use instant scroll + hysteresis; while focused we do not
+ * unpin (avoids pin/unpin bounce). On blur we reset window scroll so iOS does
+ * not leave the mobile header above the visual viewport.
  */
 export default class extends Controller {
   static targets = [
@@ -25,6 +29,8 @@ export default class extends Controller {
   #amountFocused = false;
   #compact = false;
   #scrollTimer = null;
+  #ensuringVisible = false;
+  #keyboardWasOpen = false;
   #pinnedClass = [
     "fixed",
     "z-20",
@@ -69,8 +75,8 @@ export default class extends Controller {
 
     this.#scrollRoot?.addEventListener("scroll", this.#onScroll, { passive: true });
     window.addEventListener("resize", this.#onResize, { passive: true });
-    window.visualViewport?.addEventListener("resize", this.#onViewportChange, { passive: true });
-    window.visualViewport?.addEventListener("scroll", this.#onViewportChange, { passive: true });
+    window.visualViewport?.addEventListener("resize", this.#onViewportResize, { passive: true });
+    window.visualViewport?.addEventListener("scroll", this.#onViewportScroll, { passive: true });
     this.#mq.addEventListener("change", this.#onMqChange);
   }
 
@@ -81,8 +87,8 @@ export default class extends Controller {
     this.element.removeEventListener("focusout", this.#onFocusOut, true);
     this.#scrollRoot?.removeEventListener("scroll", this.#onScroll);
     window.removeEventListener("resize", this.#onResize);
-    window.visualViewport?.removeEventListener("resize", this.#onViewportChange);
-    window.visualViewport?.removeEventListener("scroll", this.#onViewportChange);
+    window.visualViewport?.removeEventListener("resize", this.#onViewportResize);
+    window.visualViewport?.removeEventListener("scroll", this.#onViewportScroll);
     this.#mq?.removeEventListener("change", this.#onMqChange);
     window.clearTimeout(this.#scrollTimer);
     this.#scrollTimer = null;
@@ -100,21 +106,44 @@ export default class extends Controller {
     this.#updateStickyState();
     this.#updatePinnedTop();
     this.#updateCompactState();
-    this.#scheduleEnsureAmountVisible();
   };
 
-  #onScroll = () => this.#updateStickyState();
+  #onScroll = () => {
+    if (this.#ensuringVisible) return;
+    this.#updateStickyState();
+  };
 
-  #onViewportChange = () => {
+  #onViewportResize = () => {
+    const keyboardOpen = this.#keyboardLikely();
+    const keyboardJustOpened = keyboardOpen && !this.#keyboardWasOpen;
+    const keyboardJustClosed = !keyboardOpen && this.#keyboardWasOpen;
+    this.#keyboardWasOpen = keyboardOpen;
+
     this.#updateCompactState();
     if (this.#pinned) this.#updatePinnedTop();
-    this.#scheduleEnsureAmountVisible();
+
+    if (keyboardJustClosed && !this.#amountFocused) {
+      this.#restoreLayoutViewport();
+      return;
+    }
+
+    // Only re-check visibility when the keyboard opens (viewport height change),
+    // not on every visualViewport scroll — that caused up/down bounce while typing.
+    if (this.#amountFocused && keyboardJustOpened) {
+      this.#scheduleEnsureAmountVisible();
+    }
+  };
+
+  #onViewportScroll = () => {
+    if (!this.#pinned) return;
+    this.#updatePinnedTop();
   };
 
   #onFocusIn = (ev) => {
     if (!this.#isMobile()) return;
     if (!this.amountInputTargets.includes(ev.target)) return;
     this.#amountFocused = true;
+    this.#keyboardWasOpen = this.#keyboardLikely();
     this.#ensurePlaceholder();
     this.#updateCompactState();
     this.#updateStickyState();
@@ -131,6 +160,7 @@ export default class extends Controller {
       this.#amountFocused = false;
       this.#teardownPinned();
       this.#updateCompactState();
+      this.#restoreLayoutViewport();
     });
   };
 
@@ -189,9 +219,18 @@ export default class extends Controller {
       return;
     }
 
-    const shouldPin = !this.#isSummarySlotVisible();
+    // Once pinned while typing, stay pinned until blur — unpinning mid-focus
+    // fights scroll-into-view and causes jitter.
+    if (this.#pinned) {
+      const ph = this.#placeholder;
+      const panel = this.stickyPanelTarget;
+      if (ph) ph.style.height = `${panel.offsetHeight}px`;
+      this.#updatePinnedTop();
+      this.#updateCompactState();
+      return;
+    }
 
-    if (shouldPin && !this.#pinned) {
+    if (!this.#isSummarySlotVisible()) {
       const panel = this.stickyPanelTarget;
       const ph = this.#placeholder;
       if (!ph) return;
@@ -199,15 +238,6 @@ export default class extends Controller {
       ph.classList.remove("hidden");
       this.#pinnedClass.forEach((c) => panel.classList.add(c));
       this.#pinned = true;
-      this.#updatePinnedTop();
-      this.#updateCompactState();
-      this.#scheduleEnsureAmountVisible();
-    } else if (!shouldPin && this.#pinned) {
-      this.#teardownPinned();
-    } else if (this.#pinned) {
-      const ph = this.#placeholder;
-      const panel = this.stickyPanelTarget;
-      if (ph) ph.style.height = `${panel.offsetHeight}px`;
       this.#updatePinnedTop();
       this.#updateCompactState();
     }
@@ -219,9 +249,10 @@ export default class extends Controller {
     const headerH = Math.ceil(this.#headerBottom());
     const vv = window.visualViewport;
     if (vv && this.#keyboardLikely()) {
-      panel.style.top = `${Math.max(vv.offsetTop, headerH)}px`;
+      // Follow the visual viewport when iOS scrolls the layout under the keyboard.
+      panel.style.top = `${Math.max(vv.offsetTop, 0)}px`;
     } else {
-      panel.style.top = `${this.#headerBottom()}px`;
+      panel.style.top = `${headerH}px`;
     }
   }
 
@@ -247,7 +278,6 @@ export default class extends Controller {
     if (this.#placeholder && this.#pinned) {
       this.#placeholder.style.height = `${this.stickyPanelTarget.offsetHeight}px`;
     }
-    if (this.#amountFocused) this.#scheduleEnsureAmountVisible();
   }
 
   #applyCompact(on) {
@@ -290,12 +320,12 @@ export default class extends Controller {
   #scheduleEnsureAmountVisible() {
     if (!this.#amountFocused) return;
     window.clearTimeout(this.#scrollTimer);
-    this.#scrollTimer = window.setTimeout(() => this.#ensureAmountInputVisible(), 320);
-    window.requestAnimationFrame(() => this.#ensureAmountInputVisible());
+    // Wait for keyboard / layout to settle; one correction only (no rAF + timeout pair).
+    this.#scrollTimer = window.setTimeout(() => this.#ensureAmountInputVisible(), 280);
   }
 
   #ensureAmountInputVisible() {
-    if (!this.#isMobile() || !this.#amountFocused) return;
+    if (!this.#isMobile() || !this.#amountFocused || this.#ensuringVisible) return;
 
     const input = this.#activeAmountInput();
     if (!input) return;
@@ -303,11 +333,12 @@ export default class extends Controller {
     const vv = window.visualViewport;
     const scrollRoot = this.#scrollRoot;
     if (!vv || !scrollRoot) {
-      input.scrollIntoView({ block: "nearest", behavior: "smooth" });
+      input.scrollIntoView({ block: "nearest", behavior: "auto" });
       return;
     }
 
     const gap = 12;
+    const slack = 24;
     const barBottom = this.#pinned
       ? this.stickyPanelTarget.getBoundingClientRect().bottom
       : this.#headerBottom();
@@ -317,11 +348,27 @@ export default class extends Controller {
     const maxBottom = visibleBottom - gap;
     const rect = input.getBoundingClientRect();
 
-    if (rect.top < minTop) {
-      scrollRoot.scrollBy({ top: rect.top - minTop, behavior: "smooth" });
-    } else if (rect.bottom > maxBottom) {
-      scrollRoot.scrollBy({ top: rect.bottom - maxBottom, behavior: "smooth" });
+    let delta = 0;
+    if (rect.top < minTop - slack) {
+      delta = rect.top - minTop;
+    } else if (rect.bottom > maxBottom + slack) {
+      delta = rect.bottom - maxBottom;
     }
+    if (delta === 0) return;
+
+    this.#ensuringVisible = true;
+    scrollRoot.scrollBy({ top: delta, behavior: "auto" });
+    window.requestAnimationFrame(() => {
+      this.#ensuringVisible = false;
+      this.#updateStickyState();
+    });
+  }
+
+  /** iOS often leaves window/document scrolled after the keyboard closes. */
+  #restoreLayoutViewport() {
+    window.scrollTo(0, 0);
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
   }
 
   #teardownPinned() {

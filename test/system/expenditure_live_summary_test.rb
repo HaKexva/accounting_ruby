@@ -10,7 +10,7 @@ class ExpenditureLiveSummaryTest < ApplicationSystemTestCase
     ExpenditureBudget.find_or_create_by!(
       user: @user,
       calendar_month: @month,
-      category: "生活花費：食"
+      category: ExpenditureTaxonomy::DEFAULT_CATEGORIES.first
     ) do |b|
       b.item = "伙食"
       b.amount = 19_259
@@ -20,7 +20,7 @@ class ExpenditureLiveSummaryTest < ApplicationSystemTestCase
   test "selecting category updates budget expense remain chips" do
     visit root_path
 
-    find("#actual_expenditure_category").select("生活花費：食")
+    find("#actual_expenditure_category").select(ExpenditureTaxonomy::DEFAULT_CATEGORIES.first)
 
     assert_selector(
       "[data-expenditure-live-category-summary-target='budgetAmount']",

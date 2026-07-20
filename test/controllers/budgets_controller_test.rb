@@ -112,7 +112,7 @@ class BudgetsControllerTest < ActionDispatch::IntegrationTest
           expenditure_budget: {
             amount: "500",
             note: "groceries",
-            category: "生活花費：食",
+            category: ExpenditureTaxonomy::DEFAULT_CATEGORIES.first,
             item: "午餐"
           }
         }
@@ -120,7 +120,7 @@ class BudgetsControllerTest < ActionDispatch::IntegrationTest
       assert_redirected_to budgets_path
       created = ExpenditureBudget.order(:id).last
       assert_equal BigDecimal("500"), created.amount
-      assert_equal "生活花費：食", created.category
+      assert_equal ExpenditureTaxonomy::DEFAULT_CATEGORIES.first, created.category
     end
   end
 

@@ -8,6 +8,8 @@ class SessionsControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_includes response.body, "記帳"
     assert_includes response.body, "登入"
+    assert_includes response.body, "mailto:ray120424@gmail.com"
+    assert_includes response.body, "聯絡方式"
     if GoogleOauth.configured?
       assert_includes response.body, "使用 Google 登入"
       assert_includes response.body, "/auth/google_oauth2"
