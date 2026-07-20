@@ -5,7 +5,7 @@ gem "rails", "~> 8.1.3"
 # The modern asset pipeline for Rails [https://github.com/rails/propshaft]
 gem "propshaft"
 # Use sqlite3 as the database for Active Record
-gem "sqlite3", ">= 2.1"
+gem "sqlite3", ">= 2.9.5"
 # Use PostgreSQL as the database for Active Record (e.g. when DATABASE_URL is set)
 gem "pg"
 # Use the Puma web server [https://github.com/puma/puma]
@@ -24,6 +24,11 @@ gem "jbuilder"
 
 # Security: explicit minimum for bundler-audit / CI (use-after-free advisories on 1.19.3)
 gem "nokogiri", ">= 1.19.4"
+# Security: bundler-audit CVE-2026-54464 / CVE-2026-54465 / GHSA-2x63-gw47-w4mm on 0.8.0
+gem "websocket-driver", ">= 0.8.2"
+# Security: bundler-audit GHSA advisories on loofah 2.25.1 / rails-html-sanitizer 1.7.0
+gem "loofah", ">= 2.25.2"
+gem "rails-html-sanitizer", ">= 1.7.1"
 
 # Windows does not include zoneinfo files, so bundle the tzinfo-data gem
 gem "tzinfo-data", platforms: %i[ windows jruby ]

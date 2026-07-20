@@ -382,7 +382,7 @@ export default class extends Controller {
     if (formController?.platformMethodsValue?.length) {
       return formController.platformMethodsValue;
     }
-    return ["多元支付"];
+    return ["行動支付"];
   }
 
   #setStatus(text) {

@@ -4,35 +4,33 @@
 # Credit-card sub-fields remain fixed reference lists below.
 class ExpenditureTaxonomy
   DEFAULT_CATEGORIES = [
-    "生活花費：食",
-    "生活花費：帳單",
-    "生活花費：衣與外貌",
-    "生活花費：住、居家裝修、衛生用品、次月繳納帳單",
-    "生活花費：行",
-    "生活花費：育",
-    "生活花費：樂",
-    "生活花費：健（醫療）",
+    "飲食",
+    "交通",
+    "居住",
+    "購物",
+    "娛樂",
+    "醫療",
+    "教育",
     "儲蓄",
-    "家人：過年紅包、紀念日"
+    "其他"
   ].freeze
 
   DEFAULT_PAYMENT_METHODS = [
     "現金",
-    "多元支付",
-    "玉山轉帳",
-    "Linebank轉帳",
-    "玉山信用卡",
-    "富邦信用卡"
+    "行動支付",
+    "銀行轉帳",
+    "信用卡"
   ].freeze
 
   DEFAULT_PAYMENT_PLATFORMS = [
     "LINE Pay",
-    "LINE Bank",
+    "Apple Pay",
+    "Google Pay",
     "悠遊付",
-    "髮果",
-    "MOS card",
-    "星巴克隨行卡"
+    "街口支付"
   ].freeze
+
+  DEFAULT_PAYMENT_METHOD_REQUIRING_PLATFORM = "行動支付"
 
   CREDIT_CARD_PAYMENT_KINDS = [
     "分期付款",
@@ -113,7 +111,7 @@ class ExpenditureTaxonomy
   end
 
   def self.default_payment_methods_requiring_platform
-    [ "多元支付" ].freeze
+    [ DEFAULT_PAYMENT_METHOD_REQUIRING_PLATFORM ].freeze
   end
 
   def self.ensure_seeded!(user)
@@ -129,7 +127,7 @@ class ExpenditureTaxonomy
             kind: kind,
             name: name,
             position: index,
-            requires_payment_platform: kind == "payment_method" && name == "多元支付"
+            requires_payment_platform: kind == "payment_method" && name == DEFAULT_PAYMENT_METHOD_REQUIRING_PLATFORM
           )
         end
       end

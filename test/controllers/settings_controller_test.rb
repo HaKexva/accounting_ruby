@@ -73,24 +73,31 @@ class SettingsControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "update payment method platform flag" do
-    item = @user.expenditure_taxonomy_items.for_kind("payment_method").find_by!(name: "多元支付")
+    item = @user.expenditure_taxonomy_items.for_kind("payment_method").find_by!(
+      name: ExpenditureTaxonomy::DEFAULT_PAYMENT_METHOD_REQUIRING_PLATFORM
+    )
     assert item.requires_payment_platform?
 
     patch settings_taxonomy_item_path(item), params: {
-      expenditure_taxonomy_item: { name: "多元支付", requires_payment_platform: "0" }
+      expenditure_taxonomy_item: {
+        name: ExpenditureTaxonomy::DEFAULT_PAYMENT_METHOD_REQUIRING_PLATFORM,
+        requires_payment_platform: "0"
+      }
     }
     assert_redirected_to settings_path(kind: "payment_method")
     assert_not item.reload.requires_payment_platform?
   end
 
   test "renamed payment method keeps platform link" do
-    item = @user.expenditure_taxonomy_items.for_kind("payment_method").find_by!(name: "多元支付")
+    item = @user.expenditure_taxonomy_items.for_kind("payment_method").find_by!(
+      name: ExpenditureTaxonomy::DEFAULT_PAYMENT_METHOD_REQUIRING_PLATFORM
+    )
     patch settings_taxonomy_item_path(item), params: {
-      expenditure_taxonomy_item: { name: "行動支付", requires_payment_platform: "1" }
+      expenditure_taxonomy_item: { name: "電子支付", requires_payment_platform: "1" }
     }
     assert_redirected_to settings_path(kind: "payment_method")
     assert item.reload.requires_payment_platform?
-    assert_equal "行動支付", item.name
+    assert_equal "電子支付", item.name
 
     month = CalendarMonth.find_or_create_by!(
       year: Time.zone.today.year,
@@ -102,13 +109,13 @@ class SettingsControllerTest < ActionDispatch::IntegrationTest
       transaction_date: Time.zone.today,
       transaction_item: "測試",
       category: @user.expenditure_taxonomy_items.for_kind("category").first.name,
-      payment_method: "行動支付",
+      payment_method: "電子支付",
       payment_platform: "LINE Pay",
       actual_amount: 10,
       posted_amount: 10
     )
     assert record.valid?
-    assert_equal "行動支付 · LINE Pay", record.payment_summary
+    assert_equal "電子支付 · LINE Pay", record.payment_summary
   end
 
   test "custom payment method can require platform" do

@@ -11,7 +11,7 @@ export default class extends Controller {
   ];
 
   static values = {
-    platformMethods: { type: Array, default: ["多元支付"] }
+    platformMethods: { type: Array, default: ["行動支付"] }
   };
 
   connect() {
@@ -28,7 +28,7 @@ export default class extends Controller {
 
   /**
    * @param {{ preserveDependent?: boolean }} [options]
-   *   preserveDependent: keep信用卡／多元支付子欄位已選值（歷史紀錄編輯帶入時用）
+   *   preserveDependent: keep信用卡／行動支付子欄位已選值（歷史紀錄編輯帶入時用）
    */
   sync(options = {}) {
     if (!this.hasPaymentMethodTarget) return;

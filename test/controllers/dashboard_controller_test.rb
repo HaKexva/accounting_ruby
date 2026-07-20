@@ -6,6 +6,8 @@ class DashboardControllerTest < ActionDispatch::IntegrationTest
   test "index returns success" do
     get root_path
     assert_response :success
+    assert_includes response.body, "mailto:ray120424@gmail.com"
+    assert_includes response.body, "聯絡方式"
   end
 
   test "index pins 實際支出 page title at top while scrolling" do
@@ -173,7 +175,7 @@ class DashboardControllerTest < ActionDispatch::IntegrationTest
         transaction_date: Date.new(2026, 5, 1),
         transaction_item: "FILTER_MATCH_A",
         category: cat_a,
-        payment_method: "多元支付",
+        payment_method: ExpenditureTaxonomy::DEFAULT_PAYMENT_METHOD_REQUIRING_PLATFORM,
         payment_platform: ExpenditureTaxonomy::DEFAULT_PAYMENT_PLATFORMS.first,
         actual_amount: 100,
         posted_amount: 120
@@ -191,7 +193,7 @@ class DashboardControllerTest < ActionDispatch::IntegrationTest
 
       get expense_history_path(
         category: cat_a,
-        payment_method: "多元支付",
+        payment_method: ExpenditureTaxonomy::DEFAULT_PAYMENT_METHOD_REQUIRING_PLATFORM,
         date_from: "2026-05-01",
         date_to: "2026-05-10",
         min_posted_amount: "100",
@@ -242,7 +244,7 @@ class DashboardControllerTest < ActionDispatch::IntegrationTest
         transaction_date: Date.new(2026, 5, 3),
         transaction_item: "PAYMENT_CHIP_ROW",
         category: ExpenditureTaxonomy::DEFAULT_CATEGORIES.first,
-        payment_method: "多元支付",
+        payment_method: ExpenditureTaxonomy::DEFAULT_PAYMENT_METHOD_REQUIRING_PLATFORM,
         payment_platform: ExpenditureTaxonomy::DEFAULT_PAYMENT_PLATFORMS.first,
         actual_amount: 80,
         posted_amount: 80
@@ -250,7 +252,8 @@ class DashboardControllerTest < ActionDispatch::IntegrationTest
 
       get expense_history_path
       assert_response :success
-      assert_includes response.body, "多元支付 · #{ExpenditureTaxonomy::DEFAULT_PAYMENT_PLATFORMS.first}"
+      assert_includes response.body,
+                      "#{ExpenditureTaxonomy::DEFAULT_PAYMENT_METHOD_REQUIRING_PLATFORM} · #{ExpenditureTaxonomy::DEFAULT_PAYMENT_PLATFORMS.first}"
       assert_includes response.body, 'name="sort"'
     end
   end

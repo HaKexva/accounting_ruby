@@ -5,6 +5,7 @@ module RubyUI
     include Phlex::Rails::Helpers::Routes
 
     APP_NAME = "記帳"
+    CONTACT_EMAIL = "ray120424@gmail.com"
 
     NAV_ITEMS = [
       { href: :root, label: "實際支出", icon: :expense },
@@ -96,7 +97,10 @@ module RubyUI
         nav(class: "flex-1 px-3 py-4 flex flex-col gap-1", aria: { label: "主要導覽" }) do
           render_nav_links
         end
-        render_account_footer
+        div(class: "mt-auto") do
+          render_account_footer
+          render_contact_footer
+        end
       end
     end
 
@@ -133,6 +137,7 @@ module RubyUI
             end
             div(class: "mt-auto border-t border-border/60 pt-4") do
               render_account_footer
+              render_contact_footer
             end
           end
         end
@@ -143,13 +148,27 @@ module RubyUI
       user = view_context.current_user
       return unless user
 
-      div(class: "border-t border-sidebar-border/80 px-3 py-4") do
+      div(class: "px-3 py-4") do
         p(class: "truncate px-1 text-xs text-muted-foreground", title: user.email) { user.email }
         form(action: view_context.logout_path, method: "post", class: "mt-2") do
           input(type: "hidden", name: "authenticity_token", value: view_context.form_authenticity_token)
           input(type: "hidden", name: "_method", value: "delete")
           Button(type: :submit, variant: :outline, size: :sm, class: "w-full") { "登出" }
         end
+      end
+    end
+
+    def render_contact_footer
+      div(class: "border-t border-sidebar-border/80 px-3 py-3") do
+        p(class: "px-1 text-[11px] text-muted-foreground") { "聯絡方式" }
+        a(
+          href: "mailto:#{CONTACT_EMAIL}",
+          class: [
+            "mt-1 block truncate px-1 text-xs font-medium text-foreground/85",
+            "hover:text-primary hover:underline"
+          ].join(" "),
+          title: CONTACT_EMAIL
+        ) { CONTACT_EMAIL }
       end
     end
 
