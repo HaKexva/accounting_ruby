@@ -26,6 +26,9 @@ gem "jbuilder"
 gem "nokogiri", ">= 1.19.4"
 # Security: bundler-audit CVE-2026-54464 / CVE-2026-54465 / GHSA-2x63-gw47-w4mm on 0.8.0
 gem "websocket-driver", ">= 0.8.2"
+# Security: bundler-audit GHSA advisories on loofah 2.25.1 / rails-html-sanitizer 1.7.0
+gem "loofah", ">= 2.25.2"
+gem "rails-html-sanitizer", ">= 1.7.1"
 
 # Windows does not include zoneinfo files, so bundle the tzinfo-data gem
 gem "tzinfo-data", platforms: %i[ windows jruby ]
