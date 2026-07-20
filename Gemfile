@@ -24,6 +24,8 @@ gem "jbuilder"
 
 # Security: explicit minimum for bundler-audit / CI (use-after-free advisories on 1.19.3)
 gem "nokogiri", ">= 1.19.4"
+# Security: bundler-audit CVE-2026-54464 / CVE-2026-54465 / GHSA-2x63-gw47-w4mm on 0.8.0
+gem "websocket-driver", ">= 0.8.2"
 
 # Windows does not include zoneinfo files, so bundle the tzinfo-data gem
 gem "tzinfo-data", platforms: %i[ windows jruby ]
