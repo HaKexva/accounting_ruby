@@ -7,11 +7,20 @@ import { Controller } from "@hotwired/stimulus";
  *
  * Scroll corrections use instant scroll + hysteresis; while focused we do not
  * unpin (avoids pin/unpin bounce). On blur we reset window scroll so iOS does
- * not leave the mobile header above the visual viewport.
+ * not leave the mobile header above the visual viewport (only once the
+ * keyboard is closed — resetting while it is open makes iOS re-scroll and
+ * fight us).
+ *
+ * While pinned, the summary's own scroll wrapper is set to overflow visible so
+ * touch scrolls on the fixed bar chain to #app-main-scroll instead of being
+ * swallowed by the (possibly unscrollable) wrapper. While the keyboard is
+ * open we pad #app-main-scroll's bottom by the keyboard height so the submit
+ * buttons stay reachable on iOS, which ignores interactive-widget=resizes-content.
  */
 export default class extends Controller {
   static targets = [
     "stickyPanel",
+    "scrollWrap",
     "amountInput",
     "statsRow",
     "chip",
@@ -92,6 +101,7 @@ export default class extends Controller {
     this.#mq?.removeEventListener("change", this.#onMqChange);
     window.clearTimeout(this.#scrollTimer);
     this.#scrollTimer = null;
+    if (this.#scrollRoot) this.#scrollRoot.style.paddingBottom = "";
     this.#teardownPinned();
     this.#placeholder?.remove();
     this.#placeholder = null;
@@ -119,6 +129,7 @@ export default class extends Controller {
     const keyboardJustClosed = !keyboardOpen && this.#keyboardWasOpen;
     this.#keyboardWasOpen = keyboardOpen;
 
+    this.#updateKeyboardPadding();
     this.#updateCompactState();
     if (this.#pinned) this.#updatePinnedTop();
 
@@ -151,7 +162,9 @@ export default class extends Controller {
   };
 
   #onFocusOut = () => {
-    window.requestAnimationFrame(() => {
+    // setTimeout, not rAF: rAF stalls when the page isn't rendering frames
+    // (occluded window, iOS throttling) and the bar would stay pinned forever.
+    window.setTimeout(() => {
       const active = document.activeElement;
       const stillAmount =
         active &&
@@ -237,11 +250,45 @@ export default class extends Controller {
       ph.style.height = `${panel.offsetHeight}px`;
       ph.classList.remove("hidden");
       this.#pinnedClass.forEach((c) => panel.classList.add(c));
+      // Inline style, not just the `fixed` class: the panel also carries
+      // `relative`, and in the built Tailwind CSS `.relative` comes after
+      // `.fixed`, so the class alone loses and the panel never actually pins.
+      panel.style.position = "fixed";
       this.#pinned = true;
+      this.#setWrapOverflowVisible(true);
       this.#updatePinnedTop();
       this.#updateCompactState();
     }
   };
+
+  /**
+   * While the panel is fixed, its DOM home is still the summary scroll
+   * wrapper — touch scrolls on the pinned bar would target that wrapper and
+   * go nowhere. Overflow visible turns it into a non-scroll-container so the
+   * gesture chains up to #app-main-scroll. The pinned panel is out of flow
+   * and the placeholder keeps the wrapper's height, so nothing shifts.
+   */
+  #setWrapOverflowVisible(on) {
+    if (!this.hasScrollWrapTarget) return;
+    this.scrollWrapTarget.style.overflowY = on ? "visible" : "";
+  }
+
+  /**
+   * iOS Safari ignores interactive-widget=resizes-content: the keyboard
+   * overlays the layout viewport, so #app-main-scroll's bottom (the submit
+   * buttons) can end up unreachable behind it. Pad the scroller by the
+   * keyboard height while it is open.
+   */
+  #updateKeyboardPadding() {
+    const root = this.#scrollRoot;
+    if (!root) return;
+    const vv = window.visualViewport;
+    if (this.#isMobile() && vv && this.#keyboardLikely()) {
+      root.style.paddingBottom = `${Math.max(0, window.innerHeight - vv.height)}px`;
+    } else {
+      root.style.paddingBottom = "";
+    }
+  }
 
   #updatePinnedTop() {
     if (!this.#pinned) return;
@@ -358,14 +405,22 @@ export default class extends Controller {
 
     this.#ensuringVisible = true;
     scrollRoot.scrollBy({ top: delta, behavior: "auto" });
-    window.requestAnimationFrame(() => {
+    // setTimeout, not rAF: a stalled rAF would leave #ensuringVisible true and
+    // #onScroll ignoring every scroll from then on.
+    window.setTimeout(() => {
       this.#ensuringVisible = false;
       this.#updateStickyState();
     });
   }
 
-  /** iOS often leaves window/document scrolled after the keyboard closes. */
+  /**
+   * iOS often leaves window/document scrolled after the keyboard closes.
+   * Skip while the keyboard is still open (focus moved to another field) —
+   * resetting then makes iOS re-scroll to the new field and the page jumps.
+   * The keyboardJustClosed branch of #onViewportResize restores later.
+   */
   #restoreLayoutViewport() {
+    if (this.#keyboardLikely()) return;
     window.scrollTo(0, 0);
     document.documentElement.scrollTop = 0;
     document.body.scrollTop = 0;
@@ -373,11 +428,13 @@ export default class extends Controller {
 
   #teardownPinned() {
     const panel = this.stickyPanelTarget;
+    this.#setWrapOverflowVisible(false);
     if (this.#compact) {
       this.#compact = false;
       this.#applyCompact(false);
     }
     this.#pinnedClass.forEach((c) => panel.classList.remove(c));
+    panel.style.position = "";
     panel.style.top = "";
     this.#pinned = false;
     if (this.#placeholder) {

@@ -60,7 +60,10 @@ class Views::Dashboard::Index < Views::Base
 
       div(class: PAGE_SPLIT_GRID_CLASS) do
         div(class: PAGE_SPLIT_LEFT_STICKY_CLASS) do
-          div(class: "min-h-0 flex-1 overflow-y-auto overscroll-contain lg:overflow-visible lg:flex-none") do
+          div(
+            class: "min-h-0 flex-1 overflow-y-auto lg:overflow-visible lg:flex-none",
+            data: { expenditure_mobile_sticky_summary_target: "scrollWrap" }
+          ) do
             div(
               class: "relative min-h-0 lg:contents",
               data: { expenditure_mobile_sticky_summary_target: "stickyPanel" }
