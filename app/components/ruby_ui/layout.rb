@@ -26,7 +26,11 @@ module RubyUI
               "app-main-gradient flex-1 overflow-y-auto overflow-x-hidden min-h-0 overscroll-y-contain",
               "px-4 py-4 sm:px-6 sm:py-8 lg:px-10",
               "pb-[max(1rem,env(safe-area-inset-bottom,0px))]",
-              "max-lg:pt-3 lg:pt-[max(1rem,env(safe-area-inset-top,0px))]"
+              # No max-lg top padding: content scrolls through a scroll-container's
+              # padding band above the sticky page title (it pins at the padding
+              # edge, not the container top). The sticky block carries the
+              # spacing instead — see PAGE_TOP_STICKY.
+              "max-lg:pt-0 lg:pt-[max(1rem,env(safe-area-inset-top,0px))]"
             ].join(" ")
           ) do
             div(class: "w-full max-w-6xl mx-auto space-y-6 lg:space-y-8") do
