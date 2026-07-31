@@ -5,6 +5,16 @@ class Views::Dashboard::Index < Views::Base
 
   ACTUAL_EXPENDITURE_FORM_ID = "dashboard_actual_expenditure_form"
 
+  # Mobile: normal flow — the page is one scroller, chips live in the sticky
+  # header block, so this column must not clip or scroll on its own.
+  # Desktop keeps the sticky split column (same lg: behavior as
+  # PAGE_SPLIT_LEFT_STICKY_CLASS, which budgets still uses in full).
+  LEFT_COLUMN_CLASS = [
+    "shrink-0 pb-2 sm:pb-3",
+    "lg:sticky lg:top-4 lg:z-[1] lg:self-start lg:max-h-[calc(100dvh-6rem)] lg:overflow-y-auto lg:pr-1",
+    "lg:pb-0"
+  ].join(" ")
+
   def initialize(
     calendar_month:,
     month_choices:,
@@ -35,7 +45,7 @@ class Views::Dashboard::Index < Views::Base
           "expenditure-month-chart",
           "actual-expenditure-form",
           "expenditure-form",
-          "expenditure-mobile-sticky-summary",
+          "expenditure-focus-collapse",
           "expenditure-live-category-summary"
         ].join(" "),
         expenditure_month_chart_categories_value: chart_categories_json,
@@ -56,21 +66,14 @@ class Views::Dashboard::Index < Views::Base
     ) do
       div(class: "#{PAGE_TOP_STICKY} border-border/50 max-lg:!space-y-0 max-lg:!pb-3") do
         header_row
+        div(class: "pt-3 lg:hidden") do
+          mobile_category_stat_squares
+        end
       end
 
       div(class: PAGE_SPLIT_GRID_CLASS) do
-        div(class: PAGE_SPLIT_LEFT_STICKY_CLASS) do
-          div(
-            class: "min-h-0 flex-1 overflow-y-auto lg:overflow-visible lg:flex-none",
-            data: { expenditure_mobile_sticky_summary_target: "scrollWrap" }
-          ) do
-            div(
-              class: "relative min-h-0 lg:contents",
-              data: { expenditure_mobile_sticky_summary_target: "stickyPanel" }
-            ) do
-              month_data_panel
-            end
-          end
+        div(class: LEFT_COLUMN_CLASS) do
+          month_data_panel
         end
 
         div(class: PAGE_SPLIT_RIGHT_BODY_CLASS) do
@@ -107,10 +110,7 @@ class Views::Dashboard::Index < Views::Base
 
   def month_data_panel
     section(class: "#{MONTH_SUMMARY_SECTION_CLASS}", aria: { label: "本月實際支出摘要" }) do
-      div(
-        class: MONTH_SUMMARY_HEADER_CLASS,
-        data: { expenditure_mobile_sticky_summary_target: "summaryHeader" }
-      ) do
+      div(class: MONTH_SUMMARY_HEADER_CLASS) do
         div(class: "flex flex-col gap-1") do
           div(class: "flex items-baseline justify-between gap-2") do
             h2(class: MONTH_SUMMARY_TITLE_CLASS) { "月份摘要" }
@@ -128,18 +128,14 @@ class Views::Dashboard::Index < Views::Base
               ) { plain "#{@month_count} 筆" }
             end
           end
-          p(
-            class: "text-[11px] leading-snug text-muted-foreground sm:text-xs",
-            data: { expenditure_mobile_sticky_summary_target: "summaryHint" }
-          ) do
+          p(class: "text-[11px] leading-snug text-muted-foreground sm:text-xs") do
             plain "依目前選擇的消費類別（預算來自本月支出預算）"
           end
         end
       end
       div(class: MONTH_SUMMARY_BODY_CLASS) do
         desktop_summary_squares
-        mobile_category_stat_squares
-        div(class: CHART_PANEL_CLASS, data: { expenditure_mobile_sticky_summary_target: "chartPanel" }) do
+        div(class: CHART_PANEL_CLASS, data: { expenditure_focus_collapse_target: "collapsible" }) do
           p(class: "shrink-0 text-center text-xs font-medium text-foreground") { "本月消費支出結構" }
           p(class: "shrink-0 text-center text-[11px] leading-snug text-muted-foreground sm:text-xs") do
             plain "各類別同色：淺色＝尚未使用預算、深色＝已使用；另含預算收入－預算支出（占比以收入預算合計為分母）"
@@ -213,10 +209,7 @@ class Views::Dashboard::Index < Views::Base
   end
 
   def mobile_category_stat_squares
-    div(
-      class: "lg:hidden #{MOBILE_CATEGORY_STATS_ROW_CLASS}",
-      data: { expenditure_mobile_sticky_summary_target: "statsRow" }
-    ) do
+    div(class: MOBILE_CATEGORY_STATS_ROW_CLASS) do
       category_summary_chip(
         label: "預算",
         target: "budgetAmount",
@@ -240,22 +233,14 @@ class Views::Dashboard::Index < Views::Base
   end
 
   def category_summary_chip(label:, target:, initial:, label_target: nil, accent: nil)
-    div(
-      class: mobile_stat_chip_class(accent: accent),
-      data: { expenditure_mobile_sticky_summary_target: "chip" }
-    ) do
+    div(class: mobile_stat_chip_class(accent: accent)) do
       p(
         class: STAT_CHIP_LABEL_CLASS,
-        data: {
-          expenditure_mobile_sticky_summary_target: "chipLabel"
-        }.merge(label_target ? { expenditure_live_category_summary_target: label_target } : {})
+        data: label_target ? { expenditure_live_category_summary_target: label_target } : {}
       ) { label }
       p(
         class: STAT_CHIP_VALUE_CLASS,
-        data: {
-          expenditure_live_category_summary_target: target,
-          expenditure_mobile_sticky_summary_target: "chipValue"
-        }
+        data: { expenditure_live_category_summary_target: target }
       ) { plain initial }
     end
   end
@@ -398,7 +383,7 @@ class Views::Dashboard::Index < Views::Base
               form: ACTUAL_EXPENDITURE_FORM_ID,
               placeholder: "0",
               required: true,
-              data: { expenditure_mobile_sticky_summary_target: "amountInput" }
+              data: { expenditure_focus_collapse_target: "input" }
             )
           end
 
@@ -410,7 +395,7 @@ class Views::Dashboard::Index < Views::Base
               form: ACTUAL_EXPENDITURE_FORM_ID,
               placeholder: "0",
               required: true,
-              data: { expenditure_mobile_sticky_summary_target: "amountInput" }
+              data: { expenditure_focus_collapse_target: "input" }
             )
           end
 
