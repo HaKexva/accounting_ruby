@@ -40,6 +40,8 @@ export default class extends Controller {
   #scrollTimer = null;
   #ensuringVisible = false;
   #keyboardWasOpen = false;
+  #userScrolledSinceFocus = false;
+  #appliedKeyboardInset = 0;
   #pinnedClass = [
     "fixed",
     "z-20",
@@ -120,6 +122,14 @@ export default class extends Controller {
 
   #onScroll = () => {
     if (this.#ensuringVisible) return;
+    // A scroll we didn't start while an amount input is focused is the user
+    // (or the browser) moving away on purpose — never auto-scroll back after
+    // that, it reads as the page dragging them to the input.
+    if (this.#amountFocused) {
+      this.#userScrolledSinceFocus = true;
+      window.clearTimeout(this.#scrollTimer);
+      this.#scrollTimer = null;
+    }
     this.#updateStickyState();
   };
 
@@ -141,6 +151,9 @@ export default class extends Controller {
     // Only re-check visibility when the keyboard opens (viewport height change),
     // not on every visualViewport scroll — that caused up/down bounce while typing.
     if (this.#amountFocused && keyboardJustOpened) {
+      // Scrolls before this point were the browser's own focus handling, not
+      // the user leaving — the keyboard just appeared, so one correction is fine.
+      this.#userScrolledSinceFocus = false;
       this.#scheduleEnsureAmountVisible();
     }
   };
@@ -154,6 +167,7 @@ export default class extends Controller {
     if (!this.#isMobile()) return;
     if (!this.amountInputTargets.includes(ev.target)) return;
     this.#amountFocused = true;
+    this.#userScrolledSinceFocus = false;
     this.#keyboardWasOpen = this.#keyboardLikely();
     this.#ensurePlaceholder();
     this.#updateCompactState();
@@ -233,15 +247,11 @@ export default class extends Controller {
     }
 
     // Once pinned while typing, stay pinned until blur — unpinning mid-focus
-    // fights scroll-into-view and causes jitter.
-    if (this.#pinned) {
-      const ph = this.#placeholder;
-      const panel = this.stickyPanelTarget;
-      if (ph) ph.style.height = `${panel.offsetHeight}px`;
-      this.#updatePinnedTop();
-      this.#updateCompactState();
-      return;
-    }
+    // fights scroll-into-view and causes jitter. No layout reads/writes here:
+    // this runs on every scroll tick, and resizing the placeholder mid-scroll
+    // shifts content under the user's finger (scroll anchoring then tugs the
+    // page around). Viewport handlers keep top/compact/placeholder fresh.
+    if (this.#pinned) return;
 
     if (!this.#isSummarySlotVisible()) {
       const panel = this.stickyPanelTarget;
@@ -283,11 +293,16 @@ export default class extends Controller {
     const root = this.#scrollRoot;
     if (!root) return;
     const vv = window.visualViewport;
+    let inset = 0;
     if (this.#isMobile() && vv && this.#keyboardLikely()) {
-      root.style.paddingBottom = `${Math.max(0, window.innerHeight - vv.height)}px`;
-    } else {
-      root.style.paddingBottom = "";
+      inset = Math.round(Math.max(0, window.innerHeight - vv.height));
     }
+    // Hysteresis: viewport height wobbles a few px during keyboard animation
+    // and Safari chrome collapse; rewriting the padding on each wobble shifts
+    // content and scroll anchoring tugs the page back to the focused input.
+    if (Math.abs(inset - this.#appliedKeyboardInset) < 24) return;
+    this.#appliedKeyboardInset = inset;
+    root.style.paddingBottom = inset > 0 ? `${inset}px` : "";
   }
 
   #updatePinnedTop() {
@@ -365,7 +380,7 @@ export default class extends Controller {
   }
 
   #scheduleEnsureAmountVisible() {
-    if (!this.#amountFocused) return;
+    if (!this.#amountFocused || this.#userScrolledSinceFocus) return;
     window.clearTimeout(this.#scrollTimer);
     // Wait for keyboard / layout to settle; one correction only (no rAF + timeout pair).
     this.#scrollTimer = window.setTimeout(() => this.#ensureAmountInputVisible(), 280);
@@ -373,6 +388,7 @@ export default class extends Controller {
 
   #ensureAmountInputVisible() {
     if (!this.#isMobile() || !this.#amountFocused || this.#ensuringVisible) return;
+    if (this.#userScrolledSinceFocus) return;
 
     const input = this.#activeAmountInput();
     if (!input) return;

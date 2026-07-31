@@ -10,8 +10,11 @@ class Views::Base < Components::Base
   # Full width within the layout content column (`RubyUI::Layout` applies `max-w-6xl mx-auto`).
   PAGE_SHELL = "flex min-h-0 w-full flex-col"
 
+  # max-lg:pt-3 lives here, not on #app-main-scroll: a sticky element pins at
+  # the scroll container's padding edge, so container top padding is a band
+  # that scrolled content bleeds through above the title.
   PAGE_TOP_STICKY = [
-    "sticky top-0 z-20 shrink-0 space-y-6 pb-6",
+    "sticky top-0 z-20 shrink-0 space-y-6 pb-6 max-lg:pt-3",
     "border-b border-border/60 bg-background",
     "-mx-1 px-1",
     "max-lg:shadow-[0_1px_0_0_var(--border)]",
