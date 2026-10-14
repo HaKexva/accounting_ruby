@@ -1,3 +1,5 @@
+![](docs/screenshot.webp)
+
 # 記帳 (accounting_ruby)
 
 **Change Languages:** [English](#english) · [中文](#中文)
